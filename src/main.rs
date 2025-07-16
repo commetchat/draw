@@ -41,7 +41,7 @@ fn main() {
         primary_window: Some(Window {
             title: "Test".to_string(),
             canvas: Some("#bevy-portal".to_string()),
-
+            fit_canvas_to_parent: true,
             ..default()
         }),
         ..default()
