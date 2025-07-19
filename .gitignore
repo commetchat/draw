@@ -2,3 +2,8 @@
 assets/canvas
 web/bevy
 web/assets
+web/src/bevy/draw-bevy_bg.wasm.d.ts
+web/src/bevy/draw-bevy_bg.wasm
+web/src/bevy/draw-bevy_bg.js
+web/src/bevy/draw-bevy.js
+web/src/bevy/draw-bevy.d.ts

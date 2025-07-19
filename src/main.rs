@@ -16,6 +16,7 @@ use bevy::{
     },
     sprite::{Material2d, Material2dPlugin},
 };
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 use binreader::{BinReader, OwnableBinReader, RandomAccessBinReader};
 use iyes_perf_ui::{PerfUiPlugin, prelude::PerfUiDefaultEntries};
 
@@ -38,7 +39,6 @@ pub mod web_input;
 use bytes::Buf;
 
 /// This example uses a shader source file from the assets subdirectory
-const SHADER_ASSET_PATH: &str = "material.wgsl";
 
 const BACKGROUND: Color = Color::srgb(0.1, 0.1, 0.1);
 
@@ -60,6 +60,7 @@ fn main() {
     .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
     .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
     .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)
+    .add_plugins(EmbeddedAssetPlugin::default())
     .add_plugins(Material2dPlugin::<CustomMaterial>::default())
     .add_plugins(StylusInput)
     .add_plugins(StylusDrawer)
@@ -280,6 +281,7 @@ struct CustomMaterial {}
 /// You only need to implement functions for features that need non-default behavior. See the Material2d api docs for details!
 impl Material2d for CustomMaterial {
     fn fragment_shader() -> ShaderRef {
+        const SHADER_ASSET_PATH: &str = "embedded://material.wgsl";
         SHADER_ASSET_PATH.into()
     }
 }
