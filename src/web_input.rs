@@ -1,4 +1,3 @@
-pub struct WebInput;
 use bevy::prelude::*;
 
 use js_sys::{Array, Date};
@@ -10,16 +9,12 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
+use crate::stylus_input::{PointerData, StylusEvent};
+
 static ARRAY: LazyLock<Mutex<VecDeque<StylusEvent>>> =
     LazyLock::new(|| Mutex::new(VecDeque::new()));
 
-struct PointerMoveData {
-    pressure: f32,
-}
-
-enum StylusEvent {
-    PointerMove(PointerMoveData),
-}
+pub struct WebInput;
 
 #[wasm_bindgen]
 extern "C" {
@@ -50,18 +45,16 @@ impl Plugin for WebInput {
     }
 }
 
-fn handle_queue(mut commands: Commands) {
+fn handle_queue(mut events: EventWriter<StylusEvent>) {
     console_log!("Updating frame");
 
     let mut a = ARRAY.lock().unwrap();
     loop {
         let item = VecDeque::pop_front(&mut a);
         match item {
-            Some(event) => match event {
-                StylusEvent::PointerMove(pointer_move_data) => {
-                    console_log!("Got stylus event: {}", pointer_move_data.pressure)
-                }
-            },
+            Some(event) => {
+                events.write(event);
+            }
             None => break,
         }
     }
@@ -74,10 +67,32 @@ fn setup_callbacks(mut commands: Commands) {
     let mut clicks = 0;
 
     let boxed: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
-        let mut a = ARRAY.lock().unwrap();
+        console_log!("Poitner Type: {}", e.pointer_type());
+        if e.pointer_type() != "pen" {
+            console_log!("Returning because its not a pen");
+            return;
+        }
 
-        a.push_back(StylusEvent::PointerMove(PointerMoveData {
+        let window = web_sys::window().expect("should have a window in this context");
+        let document = window.document().expect("window should have a document");
+
+        let binding = document
+            .get_element_by_id("bevy-portal")
+            .expect("should have #bevy-portal on the page");
+
+        let canvas = binding
+            .dyn_ref::<HtmlElement>()
+            .expect("#bevy-portal be an `HtmlElement`");
+
+        let rect = canvas.get_bounding_client_rect();
+
+        let mut a = ARRAY.lock().unwrap();
+        a.push_back(StylusEvent::PointerMove(PointerData {
             pressure: e.pressure(),
+            position: Vec2 {
+                x: (e.client_x() as f64 - rect.left()) as f32,
+                y: (e.client_y() as f64 - rect.top()) as f32,
+            },
         }));
     });
     let closure = Closure::wrap(boxed);

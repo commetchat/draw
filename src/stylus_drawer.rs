@@ -1,0 +1,38 @@
+use bevy::{color::palettes::css::RED, math::VectorSpace, prelude::*};
+
+use js_sys::{Array, Date};
+use wasm_bindgen::prelude::*;
+use web_sys::{HtmlElement, PointerEvent};
+
+use crate::stylus_input::StylusEvent;
+
+pub struct StylusDrawer;
+
+impl Plugin for StylusDrawer {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            PostUpdate,
+            show_gizmo.after(TransformSystem::TransformPropagate),
+        );
+    }
+}
+
+fn show_gizmo(
+    mut events: EventReader<StylusEvent>,
+    camera_query: Single<(&Camera, &GlobalTransform)>,
+    mut gizmos: Gizmos,
+) {
+    let (camera, camera_transform) = *camera_query;
+
+    for event in events.read() {
+        match event {
+            StylusEvent::PointerMove(pointer_data) => {
+                if let Ok(world_pos) =
+                    camera.viewport_to_world_2d(camera_transform, pointer_data.position)
+                {
+                    gizmos.circle_2d(world_pos, 10.0 + pointer_data.pressure * 50.0, RED);
+                }
+            }
+        }
+    }
+}

@@ -20,12 +20,20 @@ use binreader::{BinReader, OwnableBinReader, RandomAccessBinReader};
 use iyes_perf_ui::{PerfUiPlugin, prelude::PerfUiDefaultEntries};
 
 use crate::{
+    camera_controller::{CameraControllerPlugin, TouchCameraController},
+    lerp_transform::{LerpTransformPlugin, TargetTransform},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
+    stylus_drawer::StylusDrawer,
+    stylus_input::StylusInput,
     web_input::WebInput,
 };
 
+pub mod camera_controller;
 pub mod file_reader;
+pub mod lerp_transform;
 pub mod line_builder;
+pub mod stylus_drawer;
+pub mod stylus_input;
 pub mod web_input;
 use bytes::Buf;
 
@@ -53,14 +61,18 @@ fn main() {
     .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
     .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)
     .add_plugins(Material2dPlugin::<CustomMaterial>::default())
-    .add_systems(Startup, setup)
-    .add_systems(Update, update_camera);
+    .add_plugins(StylusInput)
+    .add_plugins(StylusDrawer)
+    .add_plugins(LerpTransformPlugin)
+    .add_plugins(CameraControllerPlugin)
+    .add_systems(Startup, setup);
 
     #[cfg(target_arch = "wasm32")]
     app.add_plugins(WebInput);
 
     #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(Wireframe2dPlugin::default());
+
     #[cfg(not(target_arch = "wasm32"))]
     app.add_systems(Update, toggle_wireframe);
 
@@ -77,11 +89,6 @@ fn toggle_wireframe(
     }
 }
 
-fn update_camera(mut camera: Single<&mut Transform, With<Camera2d>>) {
-    camera.rotate_local_z(0.001);
-    camera.scale = Vec3::new(0.5, 0.5, 0.5);
-}
-
 // Setup a simple 2d scene
 fn setup(
     mut commands: Commands,
@@ -89,7 +96,11 @@ fn setup(
     mut materials: ResMut<Assets<CustomMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d,
+        TargetTransform::default(),
+        TouchCameraController::default(),
+    ));
 
     let bytes = include_bytes!("../assets/canvas");
     let mut reader = bytes.reader();
@@ -151,9 +162,7 @@ fn setup(
         // We use a marker component to identify the custom colored meshes
         // The `Handle<Mesh>` needs to be wrapped in a `Mesh2d` for 2D rendering
         Mesh2d(meshes.add(line)),
-        MeshMaterial2d(materials.add(CustomMaterial {
-            color_texture: Some(asset_server.load("icon.png")),
-        })),
+        MeshMaterial2d(materials.add(CustomMaterial {})),
         Transform::from_xyz(0., 0., 0.),
     ));
 
@@ -265,11 +274,7 @@ fn read_stroke(
 
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-struct CustomMaterial {
-    #[texture(0)]
-    #[sampler(1)]
-    color_texture: Option<Handle<Image>>,
-}
+struct CustomMaterial {}
 
 /// The Material2d trait is very configurable, but comes with sensible defaults for all methods.
 /// You only need to implement functions for features that need non-default behavior. See the Material2d api docs for details!

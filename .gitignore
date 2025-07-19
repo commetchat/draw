@@ -1,3 +1,4 @@
 /target
 assets/canvas
-/web/bevy
+web/bevy
+web/assets
