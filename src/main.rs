@@ -19,6 +19,7 @@ use bevy::{
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use binreader::{BinReader, OwnableBinReader, RandomAccessBinReader};
 use iyes_perf_ui::{PerfUiPlugin, prelude::PerfUiDefaultEntries};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     camera_controller::{CameraControllerPlugin, TouchCameraController},
@@ -78,6 +79,19 @@ fn main() {
     app.add_systems(Update, toggle_wireframe);
 
     app.run();
+}
+
+// Import the `window.alert` function from the Web.
+#[wasm_bindgen]
+extern "C" {
+    fn alert(s: &str);
+}
+
+// Export a `greet` function from Rust to JavaScript, that alerts a
+// hello message.
+#[wasm_bindgen]
+pub fn greet(name: &str) {
+    alert(&format!("Hello, {}!", name));
 }
 
 #[cfg(not(target_arch = "wasm32"))]
