@@ -9,8 +9,6 @@ use bevy::{
         FloatExt, Rect, Vec2,
         ops::{abs, atan2},
     },
-    platform::collections::HashMap,
-    render::render_resource::ShaderType,
 };
 
 #[derive(PartialEq)]
@@ -40,21 +38,16 @@ enum Orientation {
     Down = 1,
 }
 
-struct Gradient {}
-struct Curve {}
-
 const CMP_EPSILON: f32 = 0.00001;
 
 pub struct LineBuilder {
     pub points: Vec<Vec2>,
     pub width: f32,
     pub pressures: Vec<f32>,
-    pub texture_mode: LineTextureMode,
+    texture_mode: LineTextureMode,
     pub begin_cap_mode: LineCapMode,
     pub end_cap_mode: LineCapMode,
     pub joint_mode: LineJointMode,
-    pub gradient: Option<Gradient>,
-    pub curve: Option<Curve>,
     pub closed: bool,
     pub default_color: Color,
     _round_precision: i32,
@@ -87,8 +80,6 @@ impl LineBuilder {
             begin_cap_mode: LineCapMode::None,
             end_cap_mode: LineCapMode::None,
             joint_mode: LineJointMode::Sharp,
-            gradient: None,
-            curve: None,
             closed: false,
             default_color: Color::linear_rgb(1.0, 1.0, 1.0),
             _round_precision: 8,
@@ -121,11 +112,10 @@ impl LineBuilder {
 
         let hw = self.width * 0.5;
         let hw_sq = hw * hw;
-        let sharp_limit_sq = sharp_limit * sharp_limit;
         let point_count = self.points.len();
 
         let wrap_around = self.closed && point_count > 2;
-        self.interpolate_color = self.gradient.is_some();
+        self.interpolate_color = false; // self.gradient.is_some();
         let retrieve_curve = self.pressures.len() == self.points.len(); //self.curve.is_some();
 
         let distance_required = self.interpolate_color
@@ -141,7 +131,7 @@ impl LineBuilder {
         let mut pos_up0 = pos0;
         let mut pos_down0 = pos0;
 
-        let mut color0 = Color::linear_rgb(1.0, 1.0, 1.0);
+        let color0 = Color::linear_rgb(1.0, 1.0, 1.0);
         let mut color1 = Color::linear_rgb(1.0, 1.0, 1.0);
 
         let mut current_distance0 = 0.0;
@@ -303,8 +293,8 @@ impl LineBuilder {
                 inner_normal1 = -inner_normal1;
             }
 
-            let mut corner_pos_in = Vec2::ZERO;
-            let mut corner_pos_out = Vec2::ZERO;
+            // let mut corner_pos_in = Vec2::ZERO;
+            //let mut corner_pos_out = Vec2::ZERO;
 
             let intersection_result = segment_intersects_segment(
                 pos0 + inner_normal0,
@@ -314,7 +304,8 @@ impl LineBuilder {
             );
 
             let is_intersecting = intersection_result.0;
-            corner_pos_in = intersection_result.1;
+            let corner_pos_out;
+            let mut corner_pos_in = intersection_result.1;
 
             if is_intersecting {
                 corner_pos_out = 2.0 * pos1 - corner_pos_in;
@@ -323,8 +314,8 @@ impl LineBuilder {
                 corner_pos_out = pos1 - inner_normal0;
             }
 
-            let mut corner_pos_up = Vec2::ZERO;
-            let mut corner_pos_down = Vec2::ZERO;
+            let corner_pos_up;
+            let corner_pos_down;
             match orientation {
                 Orientation::Up => {
                     corner_pos_up = corner_pos_in;
@@ -337,8 +328,8 @@ impl LineBuilder {
             }
 
             let mut current_joint_mode = self.joint_mode.clone();
-            let mut pos_up1 = Vec2::ZERO;
-            let mut pos_down1 = Vec2::ZERO;
+            let pos_up1;
+            let pos_down1;
             if is_intersecting {
                 let width_factor_sq = width_factor * width_factor;
                 if current_joint_mode == LineJointMode::Sharp
@@ -374,11 +365,10 @@ impl LineBuilder {
 
             if self.texture_mode == LineTextureMode::Tile {
                 uvx1 = current_distance1 / (self.width * tile_aspect)
-            } else if (self.texture_mode == LineTextureMode::Stretch) {
+            } else if self.texture_mode == LineTextureMode::Stretch {
                 uvx1 = current_distance1 / total_distance;
             }
 
-            color0 = color1;
             u0 = u1;
             f0 = f1;
             pos0 = pos1;
@@ -434,8 +424,8 @@ impl LineBuilder {
             }
 
             if current_joint_mode != LineJointMode::Sharp {
-                let mut cbegin = Vec2::ZERO;
-                let mut cend = Vec2::ZERO;
+                let cbegin;
+                let cend;
                 match orientation {
                     Orientation::Up => {
                         cbegin = pos_down1;
@@ -454,8 +444,8 @@ impl LineBuilder {
                 } else if current_joint_mode == LineJointMode::Round
                     && !(wrap_around && i == i32::try_from(segments_count).unwrap())
                 {
-                    let mut vbegin = cbegin - pos1;
-                    let mut vend = cend - pos1;
+                    let vbegin = cbegin - pos1;
+                    let vend = cend - pos1;
 
                     let mut cross_product = vbegin.perp_dot(vend); // float cross_product = vbegin.cross(vend);
                     let dot_product = vbegin.dot(vend);
@@ -487,7 +477,6 @@ impl LineBuilder {
 
             if retrieve_curve {
                 // TODO: width_factor = curve->sample_baked(1.f);
-                width_factor = 1.0;
 
                 width_factor = *self.pressures.last().unwrap();
 
@@ -506,7 +495,7 @@ impl LineBuilder {
 
             if self.texture_mode == LineTextureMode::Tile {
                 uvx1 = current_distance1 / (self.width * tile_aspect);
-            } else if (self.texture_mode == LineTextureMode::Stretch) {
+            } else if self.texture_mode == LineTextureMode::Stretch {
                 uvx1 = current_distance1 / total_distance;
             }
 
@@ -587,7 +576,7 @@ impl LineBuilder {
 
         self.vertices.push(up);
 
-        if (self.interpolate_color) {
+        if self.interpolate_color {
             self.colors.push(*self.colors.last().unwrap());
         }
 
@@ -632,7 +621,7 @@ impl LineBuilder {
 
         let mut t = Vec2::new(1.0, 0.0).angle_to(vbegin);
         let end_angle = t + angle_delta;
-        let mut rpos = Vec2::ZERO;
+        let mut rpos;
 
         let mut ti = 0;
         while ti < steps as i32 {
@@ -664,7 +653,7 @@ impl LineBuilder {
 
         let mut t = Vec2::new(1.0, 0.0).angle_to(vbegin);
         let end_angle = t + angle_delta;
-        let mut rpos = Vec2::ZERO;
+        let mut rpos;
         let tt_begin = -PI / 2.0;
         let mut tt = tt_begin;
 
@@ -686,11 +675,11 @@ impl LineBuilder {
 
             self.vertices.push(rpos);
 
-            if (self.interpolate_color) {
+            if self.interpolate_color {
                 self.colors.push(color);
             }
 
-            if (self.texture_mode != LineTextureMode::None) {
+            if self.texture_mode != LineTextureMode::None {
                 let tsc = Vec2::new(tt.cos(), tt.sin());
                 self.uvs
                     .push(interpolate(uv_rect, 0.5 * (tsc + Vec2::new(1.0, 1.0))));
@@ -717,9 +706,9 @@ impl LineBuilder {
                 .push(interpolate(uv_rect, 0.5 * (tsc + Vec2::new(1.0, 1.0))));
         }
 
-        let mut vi0 = vi;
+        let vi0 = vi;
 
-        for ti in 0..(steps as i32) {
+        for _ in 0..(steps as i32) {
             self.indices.push(u32::try_from(vi0).unwrap());
             vi += 1;
             self.indices.push(u32::try_from(vi).unwrap());
@@ -729,39 +718,39 @@ impl LineBuilder {
 }
 
 fn segment_intersects_segment(from_a: Vec2, to_a: Vec2, from_b: Vec2, to_b: Vec2) -> (bool, Vec2) {
-    let mut B = to_a - from_a;
-    let mut C = from_b - from_a;
-    let mut D = to_b - from_a;
+    let b = to_a - from_a;
+    let mut c = from_b - from_a;
+    let mut d = to_b - from_a;
 
-    let ABlen = B.dot(B);
-    if ABlen <= 0.0 {
+    let ablen = b.dot(b);
+    if ablen <= 0.0 {
         return (false, Vec2::ZERO);
     }
 
-    let Bn = B / ABlen;
-    C = Vec2::new(C.x * Bn.x + C.y * Bn.y, C.y * Bn.x - C.x * Bn.y);
-    D = Vec2::new(D.x * Bn.x + D.y * Bn.y, D.y * Bn.x - D.x * Bn.y);
+    let bn = b / ablen;
+    c = Vec2::new(c.x * bn.x + c.y * bn.y, c.y * bn.x - c.x * bn.y);
+    d = Vec2::new(d.x * bn.x + d.y * bn.y, d.y * bn.x - d.x * bn.y);
 
-    if ((C.y < -CMP_EPSILON && D.y < -CMP_EPSILON) || (C.y > CMP_EPSILON && D.y > CMP_EPSILON)) {
+    if (c.y < -CMP_EPSILON && d.y < -CMP_EPSILON) || (c.y > CMP_EPSILON && d.y > CMP_EPSILON) {
         return (false, Vec2::ZERO);
     }
 
-    if is_equal_approx(C.y, D.y) {
+    if is_equal_approx(c.y, d.y) {
         return (false, Vec2::ZERO);
     }
 
-    let ABpos = D.x + (C.x - D.x) * D.y / (D.y - C.y);
+    let abpos = d.x + (c.x - d.x) * d.y / (d.y - c.y);
 
-    if ((ABpos < 0.0) || (ABpos > 1.0)) {
+    if (abpos < 0.0) || (abpos > 1.0) {
         return (false, Vec2::ZERO);
     }
 
-    let result = from_a + B * ABpos;
+    let result = from_a + b * abpos;
     return (true, result);
 }
 
 fn is_equal_approx(left: f32, right: f32) -> bool {
-    if (left == right) {
+    if left == right {
         return true;
     }
 

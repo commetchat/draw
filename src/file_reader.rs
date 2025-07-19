@@ -1,5 +1,4 @@
-use std::fs::File;
-use std::io::{self, Read, Seek};
+use std::io::{self, Read};
 
 pub fn read_u8<R: Read>(file: &mut R) -> io::Result<u8> {
     let mut buffer = [0u8; 1];

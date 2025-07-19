@@ -1,13 +1,6 @@
 //! Displays touch presses, releases, and cancels.
 
-use bevy::{
-    color::palettes::css::RED,
-    ecs::component::{Mutable, StorageType},
-    gizmos,
-    input::touch::*,
-    prelude::*,
-    render::extract_component::ExtractComponent,
-};
+use bevy::prelude::*;
 
 pub struct LerpTransformPlugin;
 

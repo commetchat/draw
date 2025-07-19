@@ -1,8 +1,4 @@
-use bevy::{color::palettes::css::RED, math::VectorSpace, prelude::*};
-
-use js_sys::{Array, Date};
-use wasm_bindgen::prelude::*;
-use web_sys::{HtmlElement, PointerEvent};
+use bevy::{color::palettes::css::RED, prelude::*};
 
 use crate::stylus_input::StylusEvent;
 

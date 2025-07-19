@@ -1,13 +1,6 @@
 //! Displays touch presses, releases, and cancels.
 
-use bevy::{
-    color::palettes::css::RED,
-    ecs::component::{Mutable, StorageType},
-    gizmos,
-    input::touch::*,
-    prelude::*,
-    render::{camera, extract_component::ExtractComponent},
-};
+use bevy::{input::touch::*, prelude::*};
 
 use crate::lerp_transform::TargetTransform;
 
@@ -33,7 +26,6 @@ fn touch_system(
         &Camera,
         &GlobalTransform,
     )>,
-    mut gizmos: Gizmos,
 ) {
     let t: Vec<&Touch> = touches.iter().collect();
 
@@ -53,7 +45,7 @@ fn touch_system(
         b = Some(*t.get(1).unwrap());
     }
 
-    if (prev_b.is_some() && b.is_none()) {
+    if prev_b.is_some() && b.is_none() {
         a = None;
         b = None;
     }

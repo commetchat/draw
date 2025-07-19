@@ -1,13 +1,10 @@
 //! A shader and a material that uses it.
 
-use std::{io::Read, ops::ControlFlow};
-
 #[cfg(not(target_arch = "wasm32"))]
 use bevy::sprite::{Wireframe2dConfig, Wireframe2dPlugin};
 
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::css::YELLOW,
     prelude::*,
     reflect::TypePath,
     render::{
@@ -17,9 +14,11 @@ use bevy::{
     sprite::{Material2d, Material2dPlugin},
 };
 use bevy_embedded_assets::EmbeddedAssetPlugin;
-use binreader::{BinReader, OwnableBinReader, RandomAccessBinReader};
 use iyes_perf_ui::{PerfUiPlugin, prelude::PerfUiDefaultEntries};
 use wasm_bindgen::prelude::wasm_bindgen;
+
+#[cfg(target_arch = "wasm32")]
+use crate::web_input::WebInput;
 
 use crate::{
     camera_controller::{CameraControllerPlugin, TouchCameraController},
@@ -27,7 +26,6 @@ use crate::{
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
     stylus_drawer::StylusDrawer,
     stylus_input::StylusInput,
-    web_input::WebInput,
 };
 
 pub mod camera_controller;
@@ -109,7 +107,6 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
-    asset_server: Res<AssetServer>,
 ) {
     commands.spawn((
         Camera2d,
@@ -124,7 +121,7 @@ fn setup(
     println!("Header: {}", len_header);
 
     file_reader::read_u32(&mut reader).unwrap();
-    let version = file_reader::read_u32(&mut reader).unwrap();
+    let _version = file_reader::read_u32(&mut reader).unwrap();
     let num_strokes = file_reader::read_u32(&mut reader).unwrap();
     println!("Num Strokes: {}", num_strokes);
 
@@ -142,9 +139,9 @@ fn setup(
 
     println!("Reading remote strokes");
     let num_remote_ids = file_reader::read_u32(&mut reader).unwrap();
-    for i in 0..num_remote_ids {
+    for _ in 0..num_remote_ids {
         let str_len = file_reader::read_u32(&mut reader).unwrap();
-        for x in 0..str_len {
+        for _ in 0..str_len {
             file_reader::read_u8(&mut reader).unwrap();
         }
 
@@ -170,8 +167,6 @@ fn setup(
     line.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
 
     line.insert_indices(mesh::Indices::U32(indices));
-
-    let color = BACKGROUND;
 
     commands.spawn((
         // We use a marker component to identify the custom colored meshes
@@ -214,7 +209,7 @@ fn read_stroke(
     builder.joint_mode = LineJointMode::Round;
     builder.width = 1.0;
 
-    let id_random = file_reader::read_u32(reader).unwrap();
+    let _id_random = file_reader::read_u32(reader).unwrap();
     let mut timestamp = file_reader::read_f64(reader).unwrap();
 
     timestamp -= 1740000000.0;
@@ -229,23 +224,20 @@ fn read_stroke(
     builder.width = width;
 
     let stroke_type = file_reader::read_u8(reader).unwrap();
-    let mut r: u8 = 255;
-    let mut g: u8 = 255;
-    let mut b: u8 = 255;
 
     let mut col = BACKGROUND;
 
     if stroke_type == 1 {
-        r = file_reader::read_u8(reader).unwrap();
-        g = file_reader::read_u8(reader).unwrap();
-        b = file_reader::read_u8(reader).unwrap();
+        let r = file_reader::read_u8(reader).unwrap();
+        let g = file_reader::read_u8(reader).unwrap();
+        let b = file_reader::read_u8(reader).unwrap();
 
         col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
     }
 
     let num_points = file_reader::read_u32(reader).unwrap();
 
-    for i in 0..num_points {
+    for _ in 0..num_points {
         let x = file_reader::read_f32(reader).unwrap();
         let y = file_reader::read_f32(reader).unwrap();
 
@@ -259,7 +251,7 @@ fn read_stroke(
 
     if has_pressure == 1 {
         let num_pressures = file_reader::read_u32(reader).unwrap();
-        for i in 0..num_pressures {
+        for _ in 0..num_pressures {
             let pressure = file_reader::read_f32(reader).unwrap();
             builder.pressures.push(pressure);
         }
@@ -273,7 +265,6 @@ fn read_stroke(
 
     builder.build();
 
-    let mut v_pos: Vec<[f32; 3]> = vec![];
     for p in &builder.vertices {
         vertices.push([p.x, p.y, 0.0]);
         let mut color = col.to_linear().to_f32_array(); // LinearRgba::from_u8_array_no_alpha().to_f32_array();

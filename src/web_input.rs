@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use js_sys::{Array, Date};
 use wasm_bindgen::prelude::*;
 use web_sys::{HtmlElement, PointerEvent};
 
@@ -60,11 +59,9 @@ fn handle_queue(mut events: EventWriter<StylusEvent>) {
     }
 }
 
-fn setup_callbacks(mut commands: Commands) {
+fn setup_callbacks() {
     let window = web_sys::window().expect("should have a window in this context");
     let document = window.document().expect("window should have a document");
-
-    let mut clicks = 0;
 
     let boxed: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
         console_log!("Poitner Type: {}", e.pointer_type());
