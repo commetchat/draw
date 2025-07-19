@@ -22,6 +22,7 @@ use crate::web_input::WebInput;
 
 use crate::{
     camera_controller::{CameraControllerPlugin, TouchCameraController},
+    chunks::{ChunkController, ChunksPlugin},
     database::Database,
     lerp_transform::{LerpTransformPlugin, TargetTransform},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
@@ -40,8 +41,9 @@ pub mod stroke;
 pub mod stylus_drawer;
 pub mod stylus_input;
 
+pub mod chunks;
 pub mod database;
-
+pub mod utils;
 pub mod web_input;
 
 use bytes::Buf;
@@ -70,6 +72,7 @@ fn main() {
     .add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)
     .add_plugins(EmbeddedAssetPlugin::default())
     .add_plugins(Material2dPlugin::<CustomMaterial>::default())
+    .add_plugins(ChunksPlugin)
     .add_plugins(Strokes)
     .add_plugins(SaveLoad)
     .add_plugins(StylusInput)
@@ -119,6 +122,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         Camera2d,
         TargetTransform::default(),
+        ChunkController::default(),
         TouchCameraController::default(),
     ));
 

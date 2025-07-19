@@ -52,13 +52,18 @@ export class WebDatabase {
             chunk_key: data.chunk_key,
             owner_id: data.owner_id,
             timestamp: data.timestamp,
+            origin_x: data.origin_x,
+            origin_y: data.origin_y,
             stroke_data: data.stroke_data,
+            mesh_data: data.mesh_data,
         };
 
         const tx = this.db?.transaction(strokes, "readwrite");
         const store = tx?.objectStore(strokes);
         store!.add(item);
         console.log("Stored stroke");
+
+        data.free();
     }
 
     store_multiple_strokes(items: [game.StrokeData]) {
@@ -71,8 +76,38 @@ export class WebDatabase {
             chunk_key: data.chunk_key,
             owner_id: data.owner_id,
             timestamp: data.timestamp,
+            origin_x: data.origin_x,
+            origin_y: data.origin_y,
             stroke_data: data.stroke_data,
+            mesh_data: data.mesh_data,
         }))
+
+
+        items.forEach((data) => data.free());
         console.log("Done!");
+    }
+
+    load_strokes_for_chunk(id: string) {
+        const tx = this.db?.transaction(strokes, "readonly");
+        const store = tx?.objectStore(strokes);
+        const index = store?.index("chunk_key");
+        var request = index?.getAll(IDBKeyRange.only(id))
+
+        request!.onsuccess = (event) => {
+            let result = (event.target as IDBRequest).result;
+
+            if (result.length > 0) {
+
+                let results = result.map((e: any) => new game.StrokeData(
+                    e.id, e.id_random, e.chunk_key, e.timestamp, e.origin_x, e.origin_y, e.owner_id, e.stroke_data, e.mesh_data
+                ));
+
+                game.db_on_strokes_loaded(results, id);
+
+                // results.forEach((e: any) => (e as game.StrokeData).free())
+
+            }
+        }
+
     }
 }

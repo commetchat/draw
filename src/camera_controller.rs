@@ -26,9 +26,22 @@ pub struct MouseCameraController {
 
 impl Plugin for CameraControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, touch_system);
-        app.add_systems(Update, mouse_system);
+        app.add_systems(Update, (touch_system, mouse_system, clamp_system).chain());
     }
+}
+
+fn clamp_system(
+    mut camera_query: Single<(
+        &mut TargetTransform,
+        &mut TouchCameraController,
+        &Camera,
+        &GlobalTransform,
+    )>,
+) {
+    let mut new_transform = camera_query.0.transform;
+    new_transform.scale = new_transform.scale.clamp_length(0.01, 8.0);
+
+    camera_query.0.transform = new_transform;
 }
 
 fn mouse_system(
@@ -62,6 +75,12 @@ fn mouse_system(
         }
     }
 
+    if mouse.pressed(MouseButton::Right) {
+        for event in mouse_movement.read() {
+            new_transform.rotate_z(event.delta.y * 0.001);
+        }
+    }
+
     for event in wheel_events.read() {
         info!("Y: {}", event.y);
 
@@ -75,8 +94,6 @@ fn mouse_system(
         } else {
             new_transform.scale *= 1.0 - (event.y.abs() * multiplier).clamp(0.0, 0.9);
         }
-
-        new_transform.scale = new_transform.scale.clamp_length(0.001, 500.0);
     }
 
     camera_query.0.transform = new_transform;

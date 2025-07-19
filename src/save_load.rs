@@ -17,7 +17,7 @@ use crate::{
     BACKGROUND, CustomMaterial,
     file_reader::{self, read_string},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
-    stroke::{Stroke, StrokeData, StrokeEvent, StrokeMetadata},
+    stroke::{Stroke, StrokeData, StrokeEvent, StrokeMesh, StrokeMetadata},
 };
 pub struct SaveLoad;
 
@@ -45,17 +45,16 @@ fn setup(
     let num_strokes = file_reader::read_u32(&mut reader).unwrap();
     println!("Num Strokes: {}", num_strokes);
 
-    let mut indices = Vec::<u32>::new();
-    let mut colors = Vec::<[f32; 4]>::new();
-    let mut vertices = Vec::<[f32; 3]>::new();
-
     for i in 0..num_strokes {
         if i % 1000 == 0 {
             println!("Reading strokes: {}", i);
         }
 
-        let stroke = read_stroke(None, &mut vertices, &mut indices, &mut colors, &mut reader);
-        events.write(StrokeEvent::StrokeFinished(stroke));
+        let stroke = read_stroke(None, &mut reader);
+        let n_points = { stroke.data.points.as_ref().unwrap().len() };
+        if n_points > 0 {
+            events.write(StrokeEvent::StrokeFinished(stroke));
+        }
     }
 
     println!("Reading remote strokes");
@@ -70,63 +69,16 @@ fn setup(
                 println!("Reading strokes: {}", i);
             }
 
-            let stroke = read_stroke(
-                Some(id.clone()),
-                &mut vertices,
-                &mut indices,
-                &mut colors,
-                &mut reader,
-            );
-            events.write(StrokeEvent::StrokeFinished(stroke));
+            let stroke = read_stroke(Some(id.clone()), &mut reader);
+            let n_points = { stroke.data.points.as_ref().unwrap().len() };
+            if n_points > 0 {
+                events.write(StrokeEvent::StrokeFinished(stroke));
+            }
         }
     }
-
-    println!("Num Vertices: {}", vertices.len());
-
-    let mut line = Mesh::new(
-        bevy::render::mesh::PrimitiveTopology::TriangleList,
-        RenderAssetUsages::RENDER_WORLD,
-    );
-
-    line.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
-    line.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-
-    line.insert_indices(mesh::Indices::U32(indices));
-
-    commands.spawn((
-        // We use a marker component to identify the custom colored meshes
-        // The `Handle<Mesh>` needs to be wrapped in a `Mesh2d` for 2D rendering
-        Mesh2d(meshes.add(line)),
-        MeshMaterial2d(materials.add(CustomMaterial {})),
-        Transform::from_xyz(0., 0., 0.),
-    ));
-
-    // commands.spawn((
-    //     Mesh2d(meshes.add(Rectangle::default())),
-    //     MeshMaterial2d(materials.add(CustomMaterial {
-    //         color: GREEN_400.into(),
-    //         color_texture: Some(asset_server.load("icon.png")),
-    //     })),
-    //     Transform::from_xyz(-100., 128., 0.).with_scale(Vec3::splat(256.)),
-    // ));
-
-    // commands.spawn((
-    //     Mesh2d(meshes.add(Rectangle::default())),
-    //     MeshMaterial2d(materials.add(CustomMaterial {
-    //         color: GREEN_400.into(),
-    //         color_texture: Some(asset_server.load("icon.png")),
-    //     })),
-    //     Transform::from_xyz(100., 128., 0.).with_scale(Vec3::splat(256.)),
-    // ));
 }
 
-fn read_stroke(
-    owner_id: Option<String>,
-    vertices: &mut Vec<[f32; 3]>,
-    indices: &mut Vec<u32>,
-    colors: &mut Vec<[f32; 4]>,
-    reader: &mut bytes::buf::Reader<&[u8]>,
-) -> Stroke {
+fn read_stroke(owner_id: Option<String>, reader: &mut bytes::buf::Reader<&[u8]>) -> Stroke {
     let mut builder = LineBuilder::new();
     builder.end_cap_mode = LineCapMode::Round;
     builder.begin_cap_mode = LineCapMode::Round;
@@ -142,7 +94,7 @@ fn read_stroke(
     z_offset *= 0.00000001;
 
     let origin_x = file_reader::read_f32(reader).unwrap();
-    let origin_y = file_reader::read_f32(reader).unwrap();
+    let origin_y = -file_reader::read_f32(reader).unwrap();
     let width = file_reader::read_f32(reader).unwrap();
 
     builder.width = width;
@@ -165,13 +117,13 @@ fn read_stroke(
 
     for _ in 0..num_points {
         let x = file_reader::read_f32(reader).unwrap();
-        let y = file_reader::read_f32(reader).unwrap();
+        let y = -file_reader::read_f32(reader).unwrap();
 
         points.push(Vec2 { x: x, y: y });
 
         builder.points.push(Vec2 {
             x: (origin_x + x),
-            y: -(origin_y + y),
+            y: (origin_y + y),
         });
     }
 
@@ -195,7 +147,9 @@ fn read_stroke(
     //     return;
     // }
 
-    let n_verts = vertices.len();
+    let mut indices = Vec::<u32>::new();
+    let mut colors = Vec::<[f32; 4]>::new();
+    let mut vertices = Vec::<[f32; 3]>::new();
 
     builder.build();
 
@@ -208,7 +162,7 @@ fn read_stroke(
     }
 
     for i in &builder.indices {
-        indices.push(*i + u32::try_from(n_verts).unwrap());
+        indices.push(*i);
     }
 
     Stroke {
@@ -221,9 +175,7 @@ fn read_stroke(
                 y: origin_y,
             },
         },
-        data: StrokeData {
-            points: points,
-            pressures: pressures,
-        },
+        data: StrokeData::new(points, pressures),
+        mesh: StrokeMesh::new(vertices, indices, colors),
     }
 }

@@ -1,20 +1,44 @@
+use std::{
+    collections::VecDeque,
+    sync::{LazyLock, Mutex},
+    time::{SystemTime, UNIX_EPOCH},
+};
+
 use bevy::{
     app::{App, Plugin, Update},
-    ecs::event::EventReader,
+    asset::{Assets, RenderAssetUsages},
+    color::{Color, ColorToComponents, palettes::css::RED},
+    ecs::{
+        event::EventReader,
+        system::{Commands, ResMut},
+    },
+    log::info,
+    platform::collections::HashMap,
+    render::mesh::{self, Mesh, Mesh2d},
+    sprite::MeshMaterial2d,
+    transform::components::Transform,
 };
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
+    CustomMaterial,
+    chunks::{ChunkEvent, position_to_chunk_id},
     database::{
-        web_database::{store_multiple_strokes, store_stroke},
+        web_database::{load_strokes_for_chunk, store_multiple_strokes, store_stroke},
         web_stroke_data::JsStrokeData,
     },
-    stroke::StrokeEvent,
+    line_builder::{LineBuilder, LineCapMode, LineJointMode},
+    stroke::{Stroke, StrokeEvent},
+    utils::now,
 };
 
-mod web_database;
-mod web_stroke_data;
+pub mod web_database;
+pub mod web_stroke_data;
 
 pub struct Database;
+
+pub static LOAD_STROKE_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<Stroke>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 impl Plugin for Database {
     fn build(&self, app: &mut App) {
@@ -31,14 +55,7 @@ fn store_finished_strokes(mut events: EventReader<StrokeEvent>) {
     for event in events.read() {
         match event {
             StrokeEvent::StrokeFinished(stroke) => {
-                data.push(JsStrokeData {
-                    id: stroke.metadata.get_id(),
-                    id_random: stroke.metadata.id_random,
-                    timestamp: stroke.metadata.timestamp,
-                    owner_id: stroke.metadata.owner.clone(),
-                    chunk_key: "0_0".to_string(),
-                    stroke_data: Vec::new(),
-                });
+                data.push(JsStrokeData::from_stroke(stroke));
 
                 // Pass to database in batches, to slightly reduce memory pressure
                 if data.len() > 500 {
@@ -52,5 +69,23 @@ fn store_finished_strokes(mut events: EventReader<StrokeEvent>) {
 
     if !data.is_empty() {
         store_multiple_strokes(data);
+    }
+}
+
+#[wasm_bindgen]
+pub fn db_on_strokes_loaded(strokes: Vec<JsStrokeData>, chunk_id: String) {
+    info!("Received {} strokes from db", strokes.len());
+
+    let mut map = LOAD_STROKE_QUEUE.lock().unwrap();
+
+    if map.contains_key(&chunk_id) == false {
+        map.insert(chunk_id.clone(), VecDeque::new());
+    }
+
+    let queue = map.get_mut(&chunk_id).unwrap();
+
+    for data in strokes.iter() {
+        let stroke = data.to_stroke();
+        queue.push_back(stroke);
     }
 }
