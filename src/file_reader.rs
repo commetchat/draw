@@ -37,15 +37,16 @@ pub fn read_f64<R: Read>(file: &mut R) -> io::Result<f64> {
 }
 
 pub fn read_string<R: Read>(file: &mut R) -> io::Result<String> {
-    let _ = read_u8(file)?;
+    let len = read_u32(file)?;
 
     let mut buffer = Vec::new();
-    loop {
+    for _ in 0..len {
         let byte = read_u8(file)?;
         if byte == 0 {
             break;
         }
         buffer.push(byte);
     }
+
     Ok(String::from_utf8_lossy(&buffer).to_string())
 }

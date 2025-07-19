@@ -1,6 +1,13 @@
 //! Displays touch presses, releases, and cancels.
 
-use bevy::{input::touch::*, prelude::*};
+use bevy::{
+    input::{
+        mouse::{MouseMotion, MouseWheel},
+        touch::*,
+    },
+    math::ops::abs,
+    prelude::*,
+};
 
 use crate::lerp_transform::TargetTransform;
 
@@ -12,10 +19,67 @@ pub struct TouchCameraController {
     last_position_b: Option<Vec2>,
 }
 
+#[derive(Component, Default)]
+pub struct MouseCameraController {
+    last_position: Option<Vec2>,
+}
+
 impl Plugin for CameraControllerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, touch_system);
+        app.add_systems(Update, mouse_system);
     }
+}
+
+fn mouse_system(
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut mouse_movement: EventReader<MouseMotion>,
+    mut wheel_events: EventReader<MouseWheel>,
+    mut camera_query: Single<(
+        &mut TargetTransform,
+        &mut TouchCameraController,
+        &Camera,
+        &GlobalTransform,
+    )>,
+) {
+    let mut new_transform = camera_query.0.transform;
+
+    if mouse.pressed(MouseButton::Middle) {
+        for event in mouse_movement.read() {
+            if let Ok(a) = camera_query
+                .2
+                .viewport_to_world_2d(camera_query.3, Vec2 { x: 0.0, y: 0.0 })
+            {
+                if let Ok(b) = camera_query
+                    .2
+                    .viewport_to_world_2d(camera_query.3, event.delta)
+                {
+                    let diff = a - b;
+                    new_transform.translation.x += diff.x;
+                    new_transform.translation.y += diff.y;
+                }
+            }
+        }
+    }
+
+    for event in wheel_events.read() {
+        info!("Y: {}", event.y);
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let multiplier = 0.1;
+        #[cfg(target_arch = "wasm32")]
+        let multiplier = 0.001;
+
+        if event.y < 0.0 {
+            new_transform.scale *= 1.0 + event.y.abs() * multiplier;
+        } else {
+            new_transform.scale *= 1.0 - (event.y.abs() * multiplier).clamp(0.0, 0.9);
+        }
+
+        new_transform.scale = new_transform.scale.clamp_length(0.001, 500.0);
+    }
+
+    camera_query.0.transform = new_transform;
 }
 
 fn touch_system(

@@ -45,8 +45,6 @@ impl Plugin for WebInput {
 }
 
 fn handle_queue(mut events: EventWriter<StylusEvent>) {
-    console_log!("Updating frame");
-
     let mut a = ARRAY.lock().unwrap();
     loop {
         let item = VecDeque::pop_front(&mut a);
@@ -64,9 +62,7 @@ fn setup_callbacks() {
     let document = window.document().expect("window should have a document");
 
     let boxed: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
-        console_log!("Poitner Type: {}", e.pointer_type());
-        if e.pointer_type() != "pen" {
-            console_log!("Returning because its not a pen");
+        if (e.pointer_type() != "pen") {
             return;
         }
 
@@ -84,6 +80,7 @@ fn setup_callbacks() {
         let rect = canvas.get_bounding_client_rect();
 
         let mut a = ARRAY.lock().unwrap();
+
         a.push_back(StylusEvent::PointerMove(PointerData {
             pressure: e.pressure(),
             position: Vec2 {
