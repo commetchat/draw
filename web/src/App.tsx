@@ -18,7 +18,6 @@ declare global {
 
 async function initGame() {
   window.gameDatabase = new WebDatabase()
-  await window.gameDatabase.clear();
   await window.gameDatabase.init();
   game.default();
 }
