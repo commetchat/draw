@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use bevy::{
     asset::RenderAssetUsages,
+    color::palettes::css::BLUE,
     prelude::*,
     render::{
         mesh::{self, Indices, VertexAttributeValues},
@@ -11,7 +12,7 @@ use bevy::{
 
 use crate::{
     CustomMaterial,
-    chunks::ChunkEvent,
+    chunks::{CHUNK_SIZE, ChunkEvent},
     database::{LOAD_MESH_QUEUE, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData},
     stroke::{self, Stroke, StrokeMesh},
     utils::now,
@@ -19,9 +20,44 @@ use crate::{
 
 #[derive(Component, Default)]
 pub struct Chunk {
+    position: Vec2,
     has_requested_db_chunks: bool,
     finished_loading: bool,
     chunk_id: String,
+}
+
+pub fn chunk_draw_system(chunks: Query<(Entity, &Chunk, &Mesh2d)>, mut gizmos: Gizmos) {
+    for chunk in chunks.iter() {
+        let pos = chunk.1.position;
+        let padding = Vec2 { x: 20.0, y: 20.0 };
+        gizmos.line_2d(
+            pos + padding,
+            pos + Vec2 {
+                x: CHUNK_SIZE - padding.x,
+                y: padding.y,
+            },
+            Color::LinearRgba(LinearRgba {
+                red: 0.5,
+                green: 0.5,
+                blue: 0.0,
+                alpha: 1.0,
+            }),
+        );
+
+        gizmos.line_2d(
+            pos + padding,
+            pos + Vec2 {
+                x: padding.x,
+                y: CHUNK_SIZE - padding.y,
+            },
+            Color::LinearRgba(LinearRgba {
+                red: 0.5,
+                green: 0.0,
+                blue: 0.5,
+                alpha: 1.0,
+            }),
+        );
+    }
 }
 
 pub fn chunk_spawn_system(
@@ -34,7 +70,7 @@ pub fn chunk_spawn_system(
     let _ = events;
     for event in events.read() {
         match event {
-            ChunkEvent::Visible(id) => {
+            ChunkEvent::Visible(id, position) => {
                 let mut mesh = Mesh::new(
                     bevy::render::mesh::PrimitiveTopology::TriangleList,
                     RenderAssetUsages::all(),
@@ -55,6 +91,7 @@ pub fn chunk_spawn_system(
 
                 commands.spawn((
                     Chunk {
+                        position: *position,
                         has_requested_db_chunks: false,
                         chunk_id: id.clone(),
                         finished_loading: false,
@@ -68,10 +105,10 @@ pub fn chunk_spawn_system(
                 for chunk in chunks.iter() {
                     if &chunk.1.chunk_id == id {
                         commands.entity(chunk.0).despawn();
-                    }
 
-                    let mesh = chunk.2;
-                    meshes.remove(mesh.id());
+                        let mesh = chunk.2;
+                        meshes.remove(mesh.id());
+                    }
                 }
             }
         }
