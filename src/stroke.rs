@@ -118,105 +118,46 @@ impl StrokeMetadata {
 }
 
 pub struct StrokeMesh {
-    binary_data: Option<Vec<u8>>,
-    pub vertices: Option<Vec<[f32; 3]>>,
-    pub indices: Option<Vec<u32>>,
-    pub colors: Option<Vec<[f32; 4]>>,
+    pub vertices: Vec<[f32; 3]>,
+    pub indices: Vec<u32>,
+    pub colors: Vec<[f32; 4]>,
 }
 
 impl StrokeMesh {
     pub fn new(vertices: Vec<[f32; 3]>, indices: Vec<u32>, colors: Vec<[f32; 4]>) -> StrokeMesh {
         StrokeMesh {
-            vertices: Some(vertices),
-            indices: Some(indices),
-            colors: Some(colors),
-            binary_data: None,
+            vertices: (vertices),
+            indices: (indices),
+            colors: (colors),
         }
     }
 
-    pub fn from_bytes(data: Vec<u8>) -> StrokeMesh {
+    pub fn from_bytes(
+        vertex_data: Vec<u8>,
+        index_data: Vec<u32>,
+        color_data: Vec<u8>,
+    ) -> StrokeMesh {
+        let vertices =
+            unsafe { transmute_many::<[f32; 3], SingleManyGuard>(&vertex_data).unwrap() }.to_vec();
+
+        let colors =
+            unsafe { transmute_many::<[f32; 4], SingleManyGuard>(&color_data).unwrap() }.to_vec();
+
         StrokeMesh {
-            binary_data: Some(data),
-            vertices: None,
-            colors: None,
-            indices: None,
+            vertices: vertices,
+            colors: colors,
+            indices: index_data,
         }
     }
 
-    pub fn load(&mut self) {
-        if !(self.vertices.is_none() && self.binary_data.is_some()) {
-            return;
-        }
-
-        let data = self.binary_data.as_ref().unwrap();
-        let mut reader = ByteReader::from(data.as_slice());
-
-        let num_bytes = reader.read_u32().unwrap();
-        let mut buf = vec![0u8; num_bytes.try_into().unwrap()];
-        reader.read(&mut buf);
-
-        let vertices = if (buf.len() != 0) {
-            unsafe { transmute_many::<[f32; 3], SingleManyGuard>(&buf).unwrap() }.to_vec()
-        } else {
-            Vec::new()
-        };
-
-        let num_bytes = reader.read_u32().unwrap();
-        let mut buf = vec![0u8; num_bytes.try_into().unwrap()];
-        reader.read(&mut buf);
-
-        let indices = if (buf.len() != 0) {
-            unsafe { transmute_many::<u32, SingleManyGuard>(&buf).unwrap() }.to_vec()
-        } else {
-            Vec::new()
-        };
-
-        let num_bytes = reader.read_u32().unwrap();
-        let mut buf = vec![0u8; num_bytes.try_into().unwrap()];
-        reader.read(&mut buf);
-
-        let colors = if (buf.len() != 0) {
-            unsafe { transmute_many::<[f32; 4], SingleManyGuard>(&buf).unwrap() }.to_vec()
-        } else {
-            Vec::new()
-        };
-
-        self.vertices = Some(vertices);
-        self.indices = Some(indices);
-        self.colors = Some(colors);
+    pub fn write_vertex_data(&self) -> Vec<u8> {
+        let bytes = transmute_to_bytes(&self.vertices);
+        bytes.to_vec()
     }
 
-    pub fn write_data(&self) -> Vec<u8> {
-        let mut writer = ByteWriter::new();
-
-        let num_verts = self.vertices.as_ref().unwrap().len();
-
-        let data = match &self.vertices {
-            Some(bytes) => bytes,
-            None => todo!(),
-        };
-
-        let bytes = transmute_to_bytes(data);
-        writer.write_u32(u32::try_from(bytes.len()).unwrap());
-        writer.write(bytes);
-
-        let data = match &self.indices {
-            Some(bytes) => bytes,
-            None => todo!(),
-        };
-        let bytes = transmute_to_bytes(data);
-        writer.write_u32(u32::try_from(bytes.len()).unwrap());
-        writer.write(bytes);
-
-        let data = match &self.colors {
-            Some(bytes) => bytes,
-            None => todo!(),
-        };
-        let bytes = transmute_to_bytes(data);
-        writer.write_u32(u32::try_from(bytes.len()).unwrap());
-        writer.write(bytes);
-
-        writer.as_slice().to_vec()
+    pub fn write_color_data(&self) -> Vec<u8> {
+        let bytes = transmute_to_bytes(&self.colors);
+        bytes.to_vec()
     }
 }
 

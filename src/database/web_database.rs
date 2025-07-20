@@ -11,5 +11,5 @@ extern "C" {
     pub fn store_multiple_strokes(s: Vec<JsStrokeData>);
 
     #[wasm_bindgen(js_namespace = gameDatabase)]
-    pub fn load_strokes_for_chunk(id: String);
+    pub fn load_mesh_for_chunk(id: String);
 }

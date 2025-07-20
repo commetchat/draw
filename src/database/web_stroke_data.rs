@@ -17,10 +17,36 @@ pub struct JsStrokeData {
     pub origin_y: f32,
     pub owner_id: Option<String>,
     pub stroke_data: Vec<u8>,
-    pub mesh_data: Vec<u8>,
+    pub vertex_data: Vec<u8>,
+    pub index_data: Vec<u32>,
+    pub color_data: Vec<u8>,
 }
 
-use bincode::{Decode, Encode};
+#[wasm_bindgen(getter_with_clone, js_name = "MeshData")]
+pub struct JsMeshData {
+    pub chunk_key: String,
+    pub vertex_data: Vec<u8>,
+    pub index_data: Vec<u32>,
+    pub color_data: Vec<u8>,
+}
+
+#[wasm_bindgen(js_class = "MeshData")]
+impl JsMeshData {
+    #[wasm_bindgen(constructor)]
+    pub fn new(
+        chunk_key: String,
+        vertex_data: Vec<u8>,
+        index_data: Vec<u32>,
+        color_data: Vec<u8>,
+    ) -> JsMeshData {
+        JsMeshData {
+            chunk_key: chunk_key,
+            vertex_data: vertex_data,
+            index_data: index_data,
+            color_data: color_data,
+        }
+    }
+}
 
 #[wasm_bindgen(js_class = "StrokeData")]
 impl JsStrokeData {
@@ -34,7 +60,9 @@ impl JsStrokeData {
         origin_y: f32,
         owner_id: Option<String>,
         stroke_data: Vec<u8>,
-        mesh_data: Vec<u8>,
+        vertex_data: Vec<u8>,
+        index_data: Vec<u32>,
+        color_data: Vec<u8>,
     ) -> JsStrokeData {
         JsStrokeData {
             id: id,
@@ -45,7 +73,9 @@ impl JsStrokeData {
             timestamp: timestamp,
             owner_id: owner_id,
             stroke_data: stroke_data,
-            mesh_data: mesh_data,
+            vertex_data: vertex_data,
+            index_data: index_data,
+            color_data: color_data,
         }
     }
 }
@@ -55,7 +85,6 @@ impl JsStrokeData {
         let mut writer = ByteWriter::new();
 
         let binary_data = stroke.data.write_data();
-        let mesh_data = stroke.mesh.write_data();
 
         let chunk_key = position_to_chunk_id(stroke.metadata.origin);
 
@@ -68,23 +97,9 @@ impl JsStrokeData {
             origin_y: stroke.metadata.origin.y,
             owner_id: stroke.metadata.owner.clone(),
             stroke_data: binary_data,
-            mesh_data: mesh_data,
+            vertex_data: stroke.mesh.write_vertex_data(),
+            index_data: stroke.mesh.indices.clone(),
+            color_data: stroke.mesh.write_color_data(),
         };
-    }
-
-    pub fn to_stroke(&self) -> Stroke {
-        Stroke {
-            metadata: StrokeMetadata {
-                timestamp: self.timestamp,
-                id_random: self.id_random,
-                owner: self.owner_id.clone(),
-                origin: Vec2 {
-                    x: self.origin_x,
-                    y: self.origin_y,
-                },
-            },
-            data: StrokeData::from_bytes(self.stroke_data.clone()),
-            mesh: StrokeMesh::from_bytes(self.mesh_data.clone()),
-        }
     }
 }

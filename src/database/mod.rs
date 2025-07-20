@@ -24,8 +24,8 @@ use crate::{
     CustomMaterial,
     chunks::{ChunkEvent, position_to_chunk_id},
     database::{
-        web_database::{load_strokes_for_chunk, store_multiple_strokes, store_stroke},
-        web_stroke_data::JsStrokeData,
+        web_database::{store_multiple_strokes, store_stroke},
+        web_stroke_data::{JsMeshData, JsStrokeData},
     },
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
     stroke::{Stroke, StrokeEvent},
@@ -37,7 +37,7 @@ pub mod web_stroke_data;
 
 pub struct Database;
 
-pub static LOAD_STROKE_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<Stroke>>>> =
+pub static LOAD_MESH_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<JsMeshData>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 impl Plugin for Database {
@@ -73,19 +73,16 @@ fn store_finished_strokes(mut events: EventReader<StrokeEvent>) {
 }
 
 #[wasm_bindgen]
-pub fn db_on_strokes_loaded(strokes: Vec<JsStrokeData>, chunk_id: String) {
-    info!("Received {} strokes from db", strokes.len());
+pub fn db_on_mesh_loaded(mesh: JsMeshData) {
+    info!("Received mesh from db");
 
-    let mut map = LOAD_STROKE_QUEUE.lock().unwrap();
+    let mut map = LOAD_MESH_QUEUE.lock().unwrap();
 
-    if map.contains_key(&chunk_id) == false {
-        map.insert(chunk_id.clone(), VecDeque::new());
+    if map.contains_key(&mesh.chunk_key) == false {
+        map.insert(mesh.chunk_key.clone(), VecDeque::new());
     }
 
-    let queue = map.get_mut(&chunk_id).unwrap();
+    let queue = map.get_mut(&mesh.chunk_key).unwrap();
 
-    for data in strokes.iter() {
-        let stroke = data.to_stroke();
-        queue.push_back(stroke);
-    }
+    queue.push_back(mesh);
 }

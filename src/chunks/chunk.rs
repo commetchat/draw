@@ -12,8 +12,8 @@ use bevy::{
 use crate::{
     CustomMaterial,
     chunks::ChunkEvent,
-    database::{LOAD_STROKE_QUEUE, web_database::load_strokes_for_chunk},
-    stroke::{self, Stroke},
+    database::{LOAD_MESH_QUEUE, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData},
+    stroke::{self, Stroke, StrokeMesh},
     utils::now,
 };
 
@@ -87,11 +87,11 @@ pub fn update_chunk_system(
     for mut chunk in chunks.iter_mut() {
         if chunk.0.has_requested_db_chunks == false {
             chunk.0.has_requested_db_chunks = true;
-            load_strokes_for_chunk(chunk.0.chunk_id.clone());
+            load_mesh_for_chunk(chunk.0.chunk_id.clone());
         }
     }
 
-    let mut map = match LOAD_STROKE_QUEUE.lock() {
+    let mut map = match LOAD_MESH_QUEUE.lock() {
         Ok(map) => map,
         Err(_) => {
             info!("Failed to acquire lock!");
@@ -132,60 +132,16 @@ pub fn update_chunk_system(
     let b = now();
 }
 
-fn handle_queue(mesh: &mut Mesh, queue: &mut VecDeque<Stroke>) {
-    let mut verts = {
-        let verts = mesh.attribute(Mesh::ATTRIBUTE_POSITION);
-
-        match verts {
-            Some(verts) => match verts {
-                VertexAttributeValues::Float32x3(items) => items.clone(),
-                _ => Vec::new(),
-            },
-            None => Vec::new(),
-        }
+fn handle_queue(mesh: &mut Mesh, queue: &mut VecDeque<JsMeshData>) {
+    let mut stroke = match queue.pop_front() {
+        Some(stroke) => stroke,
+        None => return,
     };
 
-    let mut colors = {
-        let colors = mesh.attribute_mut(Mesh::ATTRIBUTE_COLOR);
+    let stroke_mesh =
+        StrokeMesh::from_bytes(stroke.vertex_data, stroke.index_data, stroke.color_data);
 
-        match colors {
-            Some(colors) => match colors {
-                VertexAttributeValues::Float32x4(items) => items.clone(),
-                _ => Vec::new(),
-            },
-            None => Vec::new(),
-        }
-    };
-
-    let mut indices = match mesh.indices_mut() {
-        Some(indices) => {
-            if let Indices::U32(indices) = indices {
-                indices.clone()
-            } else {
-                Vec::new()
-            }
-        }
-        None => Vec::new(),
-    };
-
-    loop {
-        let mut stroke = match queue.pop_front() {
-            Some(stroke) => stroke,
-            None => break,
-        };
-
-        stroke.mesh.load();
-
-        let num_verts = u32::try_from(verts.len()).unwrap();
-
-        verts.append(&mut stroke.mesh.vertices.unwrap());
-        colors.append(&mut stroke.mesh.colors.unwrap());
-        for i in stroke.mesh.indices.unwrap().iter() {
-            indices.push(i + num_verts)
-        }
-    }
-
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-    mesh.insert_indices(Indices::U32(indices));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, stroke_mesh.vertices);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, stroke_mesh.colors);
+    mesh.insert_indices(Indices::U32(stroke_mesh.indices));
 }
