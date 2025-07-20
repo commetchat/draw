@@ -137,11 +137,21 @@ impl StrokeMesh {
         index_data: Vec<u32>,
         color_data: Vec<u8>,
     ) -> StrokeMesh {
-        let vertices =
-            unsafe { transmute_many::<[f32; 3], SingleManyGuard>(&vertex_data).unwrap() }.to_vec();
+        let vertices = unsafe {
+            match transmute_many::<[f32; 3], SingleManyGuard>(&vertex_data) {
+                Ok(data) => data,
+                Err(_) => &[],
+            }
+        }
+        .to_vec();
 
-        let colors =
-            unsafe { transmute_many::<[f32; 4], SingleManyGuard>(&color_data).unwrap() }.to_vec();
+        let colors = unsafe {
+            match transmute_many::<[f32; 4], SingleManyGuard>(&color_data) {
+                Ok(data) => data,
+                Err(_) => &[],
+            }
+        }
+        .to_vec();
 
         StrokeMesh {
             vertices: vertices,

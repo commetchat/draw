@@ -3,10 +3,13 @@ import * as game from './bevy/draw-bevy';
 let db: IDBDatabase | null
 
 self.onmessage = function (e) {
-    console.log("HEllo from worker!");
-    console.log(e.data);
-
     if (e.data.type == "init_db") {
+        console.log = (e) => {
+            postMessage({
+                type: "log",
+                data: e,
+            })
+        }
         initDb();
     }
 
@@ -30,21 +33,25 @@ type MeshData = {
 }
 
 function clearDb(): Promise<void> {
+    console.log("Clearing database");
     return new Promise(resolve => {
         var request = indexedDB.deleteDatabase("strokeStorage");
+        console.log("Created request");
 
-        request.onsuccess = event => {
-            console.log("Cleared database!");
-            resolve();
-        }
+
+        resolve();
+
     });
 }
 
 function initDb() {
+    console.log("Initializing database");
     clearDb().then(() => {
+        console.log("Creating database");
         var request = indexedDB.open("strokeStorage", 3);
 
         request.onupgradeneeded = event => {
+            console.log("Upgrade needed");
             var db = (event.target as IDBOpenDBRequest).result;
 
             var objectStore = db.createObjectStore(strokes, {
@@ -62,7 +69,11 @@ function initDb() {
         request.onsuccess = event => {
             console.log("Opened database!");
             db = (event.target as IDBOpenDBRequest).result;
-            self.postMessage("db_init");
+            self.postMessage({ type: "db_init" });
+        }
+
+        request.onerror = event => {
+            console.log("Failed to open database!");
         }
     });
 }
@@ -81,8 +92,6 @@ function store_multiple_strokes(items: [game.StrokeData]) {
     const store = tx?.objectStore(strokes);
     console.log("Inserting strokes: ", items.length);
 
-
-    console.log(items)
 
     let keys = new Set<String>()
 

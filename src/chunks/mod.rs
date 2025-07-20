@@ -1,5 +1,5 @@
 use bevy::{
-    color::palettes::css::{BLUE, GREEN, RED},
+    color::palettes::css::{BLUE, GREEN, PURPLE, RED},
     prelude::*,
     window::PrimaryWindow,
 };
@@ -21,7 +21,7 @@ pub enum ChunkEvent {
     NotVisible(String),
 }
 
-const CHUNK_SIZE: f32 = 2000.0;
+const CHUNK_SIZE: f32 = 800.0;
 
 impl Plugin for ChunksPlugin {
     fn build(&self, app: &mut App) {
@@ -63,7 +63,7 @@ fn show_chunks(
 
     let size = window.physical_size();
 
-    let padding = -Vec2::new(300.0, 100.0);
+    let padding = Vec2::new(0.0, 0.0);
 
     let corner = Vec2 {
         x: size.x as f32,
@@ -75,6 +75,29 @@ fn show_chunks(
     let scale = 1.0 / camera_transform.scale().x;
 
     let mut visible_chunk_ids = vec![];
+
+    let camera_position = camera_transform.translation();
+
+    // always get a 3x3 grid around the camera
+    for x in -1..=1 {
+        for y in -1..=1 {
+            let mut pos = Vec2 {
+                x: camera_position.x,
+                y: camera_position.y,
+            };
+            pos.x += (CHUNK_SIZE * 0.9) * (x as f32);
+            pos.y += (CHUNK_SIZE * 0.9) * (y as f32);
+
+            let id = position_to_chunk_id(pos);
+            let chunk_pos = position_to_chunk_position(pos);
+
+            if visible_chunk_ids.iter().any(|f: &(String, Vec2)| f.0 == id) == false {
+                visible_chunk_ids.push((id, chunk_pos));
+            }
+
+            gizmos.circle_2d(pos, 10.0, PURPLE);
+        }
+    }
 
     while position.x < corner.x {
         while position.y < corner.y {

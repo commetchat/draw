@@ -1,4 +1,4 @@
-import type { Component } from 'solid-js';
+import { createSignal, type Component } from 'solid-js';
 
 import logo from './logo.svg';
 import styles from './App.module.css';
@@ -18,13 +18,22 @@ declare global {
 
 async function initGame() {
   window.gameDatabase = new WebDatabase()
-  await window.gameDatabase.init();
   game.default();
 }
 
 const App: Component = () => {
 
   initGame();
+
+  let [getLines, setLines] = createSignal<string>("")
+  let original = console.log;
+
+  console.log = (e) => {
+    original(e);
+
+    let s = getLines();
+    setLines(`${e}\n` + s);
+  }
 
   return (
     <div class={styles.App}>
@@ -36,6 +45,9 @@ const App: Component = () => {
         <div style={"z-index: 2; position: absolute; top: 0; left: 0;"}>
           <md-filled-icon-button>test</md-filled-icon-button>
           <md-filled-button onclick={() => game.greet("Test")}>hello!</md-filled-button>
+          <textarea style={"width: 75vw; height: 20vh; position: absolute"} disabled value={getLines()}>
+          </textarea>
+
         </div>
       </header>
     </div >

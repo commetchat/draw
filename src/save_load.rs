@@ -1,5 +1,5 @@
 use bevy::{
-    app::{App, Plugin, Startup},
+    app::{App, FixedUpdate, Plugin, Startup},
     asset::{Assets, RenderAssetUsages},
     color::{Color, ColorToComponents, ColorToPacked, Srgba},
     ecs::{
@@ -15,15 +15,17 @@ use bytes::Buf;
 
 use crate::{
     BACKGROUND, CustomMaterial,
+    database::DATABASE_READY,
     file_reader::{self, read_string},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
     stroke::{Stroke, StrokeData, StrokeEvent, StrokeMesh, StrokeMetadata},
 };
+
 pub struct SaveLoad;
 
 impl Plugin for SaveLoad {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup);
+        app.add_systems(FixedUpdate, setup);
     }
 }
 
@@ -34,6 +36,14 @@ fn setup(
     mut events: EventWriter<StrokeEvent>,
     mut materials: ResMut<Assets<CustomMaterial>>,
 ) {
+    let mut ready = DATABASE_READY.lock().unwrap();
+
+    if *ready == false {
+        return;
+    }
+
+    *ready = false;
+
     let bytes = include_bytes!("../assets/canvas");
     let mut reader = bytes.reader();
     let len_header = file_reader::read_u32(&mut reader).unwrap();

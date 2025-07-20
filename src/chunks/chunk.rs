@@ -175,6 +175,11 @@ fn handle_queue(mesh: &mut Mesh, queue: &mut VecDeque<JsMeshData>) {
         None => return,
     };
 
+    if stroke.vertex_data.is_empty() || stroke.index_data.is_empty() || stroke.color_data.is_empty()
+    {
+        return;
+    }
+
     let stroke_mesh =
         StrokeMesh::from_bytes(stroke.vertex_data, stroke.index_data, stroke.color_data);
 

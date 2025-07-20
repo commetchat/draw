@@ -40,6 +40,8 @@ pub struct Database;
 pub static LOAD_MESH_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<JsMeshData>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
+pub static DATABASE_READY: Mutex<bool> = Mutex::new(false);
+
 impl Plugin for Database {
     fn build(&self, app: &mut App) {
         #[cfg(target_arch = "wasm32")]
@@ -85,4 +87,12 @@ pub fn db_on_mesh_loaded(mesh: JsMeshData) {
     let queue = map.get_mut(&mesh.chunk_key).unwrap();
 
     queue.push_back(mesh);
+}
+
+#[wasm_bindgen]
+pub fn db_ready() {
+    info!("Received database ready signal");
+
+    let mut ready = DATABASE_READY.lock().unwrap();
+    *ready = true;
 }

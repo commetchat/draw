@@ -23,7 +23,7 @@ use crate::web_input::WebInput;
 use crate::{
     camera_controller::{CameraControllerPlugin, TouchCameraController},
     chunks::{ChunkController, ChunksPlugin},
-    database::Database,
+    database::{Database, web_database::init_web_database},
     lerp_transform::{LerpTransformPlugin, TargetTransform},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
     save_load::SaveLoad,
@@ -92,6 +92,8 @@ fn main() {
     app.add_systems(Update, toggle_wireframe);
 
     app.run();
+
+    init_web_database();
 }
 
 // Import the `window.alert` function from the Web.

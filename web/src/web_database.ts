@@ -56,10 +56,23 @@ function handleMessage(message: MessageEvent<any>) {
     if (message.data.type == "loaded_mesh_for_chunk") {
         handle_mesh_loaded(message.data.data);
     }
+
+    if (message.data.type == "db_init") {
+        handle_database_ready();
+    }
+
+    if (message.data.type == "log") {
+        console.log(message.data.data);
+    }
 }
 
 function handle_mesh_loaded(data: MeshData) {
     console.log("Received mesh data from worker!");
     game.db_on_mesh_loaded(new game.MeshData(data.chunk_key, data.vertex_data, data.index_data, data.color_data));
+}
+
+function handle_database_ready() {
+    console.log("Database is ready!");
+    game.db_ready();
 }
 

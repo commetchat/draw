@@ -132,7 +132,6 @@ fn touch_system(
     }
 
     if a.is_some() && b.is_none() && prev_a.is_some() {
-        info!("A: {}", a.unwrap().id());
         if let Ok(initial_focal_point) = camera_query
             .2
             .viewport_to_world_2d(camera_query.3, prev_a.unwrap())
