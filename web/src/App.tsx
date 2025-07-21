@@ -21,6 +21,28 @@ async function initGame() {
   game.default();
 }
 
+function openFile() {
+  var input = document.createElement('input');
+  input.type = 'file';
+
+  input.onchange = e => {
+    // getting a hold of the file reference
+    var file = (e.target! as any).files[0];
+
+    // setting up the reader
+    var reader = new FileReader();
+    reader.readAsText(file, 'UTF-8');
+
+    // here we tell the reader what to do when it's done reading...
+    reader.onload = readerEvent => {
+      var content = (readerEvent as any).target.result; // this is the content!
+      console.log(content);
+    }
+  }
+
+  input.click();
+}
+
 const App: Component = () => {
 
   initGame();
@@ -35,6 +57,8 @@ const App: Component = () => {
     setLines(`${e}\n` + s);
   }
 
+
+
   return (
     <div class={styles.App}>
 
@@ -43,7 +67,7 @@ const App: Component = () => {
           <canvas style={"z-index: 1; position: relative;"} id="bevy-portal"></canvas>
         </div>
         <div style={"z-index: 2; position: absolute; top: 0; left: 0;"}>
-          <md-filled-icon-button>test</md-filled-icon-button>
+          <md-filled-icon-button onclick={openFile} >Open File</md-filled-icon-button>
           <md-filled-button onclick={() => game.greet("Test")}>hello!</md-filled-button>
           <textarea style={"width: 75vw; height: 20vh; position: absolute"} disabled value={getLines()}>
           </textarea>
