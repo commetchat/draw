@@ -187,11 +187,13 @@ function load_mesh_for_chunk(id: string) {
                 type: "loaded_mesh_for_chunk",
                 data: {
                     chunk_key: id,
-                    vertex_data: m.vertices,
-                    index_data: m.indices,
-                    color_data: m.colors,
+                    vertex_data: m.vertices.buffer,
+                    index_data: m.indices.buffer,
+                    color_data: m.colors.buffer,
                 }
-            })
+            }, {
+                transfer: [m.vertices.buffer, m.indices.buffer, m.colors.buffer]
+            });
 
         }
     }

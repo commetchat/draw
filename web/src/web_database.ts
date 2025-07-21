@@ -66,9 +66,12 @@ function handleMessage(message: MessageEvent<any>) {
     }
 }
 
-function handle_mesh_loaded(data: MeshData) {
+function handle_mesh_loaded(data: any) {
     console.log("Received mesh data from worker!");
-    game.db_on_mesh_loaded(new game.MeshData(data.chunk_key, data.vertex_data, data.index_data, data.color_data));
+    let verts = new Uint8Array(data.vertex_data);
+    let indices = new Uint32Array(data.index_data);
+    let colors = new Uint8Array(data.color_data);
+    game.db_on_mesh_loaded(new game.MeshData(data.chunk_key, verts, indices, colors));
 }
 
 function handle_database_ready() {
