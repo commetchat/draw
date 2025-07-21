@@ -13,6 +13,7 @@ use bevy::{
         view::RenderLayers,
     },
     sprite::{Material2d, Material2dPlugin},
+    window::WindowResolution,
 };
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use iyes_perf_ui::{
@@ -75,8 +76,10 @@ fn main() {
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
             title: "Test".to_string(),
+            resolution: WindowResolution::new(500.0, 500.0).with_scale_factor_override(1.0),
             canvas: Some("#bevy-portal".to_string()),
             fit_canvas_to_parent: true,
+
             ..default()
         }),
         ..default()
