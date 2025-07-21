@@ -10,11 +10,18 @@ use bevy::{
     render::{
         mesh::{self},
         render_resource::{AsBindGroup, ShaderRef},
+        view::RenderLayers,
     },
     sprite::{Material2d, Material2dPlugin},
 };
 use bevy_embedded_assets::EmbeddedAssetPlugin;
-use iyes_perf_ui::{PerfUiPlugin, prelude::PerfUiDefaultEntries};
+use iyes_perf_ui::{
+    PerfUiPlugin,
+    entries::{
+        PerfUiFixedTimeEntries, PerfUiFramerateEntries, PerfUiSystemEntries, PerfUiWindowEntries,
+    },
+    prelude::{PerfUiDefaultEntries, PerfUiEntryFPS, PerfUiEntryFrameTime},
+};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[cfg(target_arch = "wasm32")]
@@ -26,6 +33,9 @@ use crate::{
     database::{Database, web_database::init_web_database},
     lerp_transform::{LerpTransformPlugin, TargetTransform},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
+    retained_camera::{
+        RetainedCameraPlugin, camera_manager::CameraMovementRender, copy_camera::TargetCamera,
+    },
     save_load::SaveLoad,
     stroke::Strokes,
     stylus_drawer::StylusDrawer,
@@ -33,6 +43,8 @@ use crate::{
 };
 
 pub mod camera_controller;
+pub mod retained_camera;
+
 pub mod file_reader;
 pub mod lerp_transform;
 pub mod line_builder;
@@ -51,6 +63,11 @@ use bytes::Buf;
 /// This example uses a shader source file from the assets subdirectory
 
 const BACKGROUND: Color = Color::srgb(0.1, 0.1, 0.1);
+
+const RENDER_LAYER_BATCH_STROKES: usize = 0;
+const RENDER_LAYER_RETAINED_IMAGE: usize = 1;
+const RENDER_LAYER_ACTIVE_STROKES: usize = 2;
+const RENDER_LAYER_HUD: usize = 3;
 
 fn main() {
     let mut app = App::new();
@@ -78,6 +95,7 @@ fn main() {
     .add_plugins(StylusInput)
     .add_plugins(StylusDrawer)
     .add_plugins(Database)
+    .add_plugins(RetainedCameraPlugin)
     .add_plugins(LerpTransformPlugin)
     .add_plugins(CameraControllerPlugin)
     .add_systems(Startup, setup);
@@ -123,12 +141,22 @@ fn toggle_wireframe(
 fn setup(mut commands: Commands) {
     commands.spawn((
         Camera2d,
+        RenderLayers::from_layers(&[
+            RENDER_LAYER_BATCH_STROKES,
+            RENDER_LAYER_HUD,
+            RENDER_LAYER_RETAINED_IMAGE,
+        ]),
+        TargetCamera {},
+        CameraMovementRender::default(),
         TargetTransform::default(),
         ChunkController::default(),
         TouchCameraController::default(),
     ));
 
-    commands.spawn(PerfUiDefaultEntries::default());
+    commands.spawn((
+        PerfUiFramerateEntries::default(),
+        RenderLayers::layer(RENDER_LAYER_HUD),
+    ));
 }
 
 // This is the struct that will be passed to your shader
