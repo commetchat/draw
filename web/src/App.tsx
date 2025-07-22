@@ -50,12 +50,12 @@ const App: Component = () => {
   let [getLines, setLines] = createSignal<string>("")
   let original = console.log;
 
-  console.log = (e) => {
-    original(e);
-
-    let s = getLines();
-    setLines(`${e}\n` + s);
-  }
+  // console.log = (e) => {
+  //   original(e);
+  // 
+  //   let s = getLines();
+  //   setLines(`${e}\n` + s);
+  // }
 
 
 

@@ -6,12 +6,12 @@ use bevy::{
     prelude::*,
     render::{
         mesh::{self, Indices, VertexAttributeValues},
-        view::NoFrustumCulling,
+        view::{NoFrustumCulling, RenderLayers},
     },
 };
 
 use crate::{
-    CustomMaterial,
+    CustomMaterial, RENDER_LAYER_BATCH_STROKES,
     chunks::{CHUNK_SIZE, ChunkEvent},
     database::{LOAD_MESH_QUEUE, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData},
     stroke::{self, Stroke, StrokeMesh},
@@ -96,6 +96,7 @@ pub fn chunk_spawn_system(
                         chunk_id: id.clone(),
                         finished_loading: false,
                     },
+                    RenderLayers::from_layers(&[RENDER_LAYER_BATCH_STROKES]),
                     NoFrustumCulling {},
                     Mesh2d(handle),
                     MeshMaterial2d(materials.add(CustomMaterial {})),

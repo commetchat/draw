@@ -1,13 +1,21 @@
 use bevy::{
     ecs::{
         component::Component,
+        event::Event,
         query::{With, Without},
         system::Single,
     },
     transform::components::Transform,
 };
 
-use crate::retained_camera::{RetainedCamera, RetainedImagePlane};
+use crate::retained_view::{RetainedImagePlane, RetainedView};
+
+#[derive(Event, Debug)]
+pub enum RetainedViewEvent {
+    UpdateFrame,
+    UpdateContinuous,
+    RetainFrame,
+}
 
 #[derive(Component, Default)]
 pub struct TargetCamera {}
@@ -17,14 +25,14 @@ pub fn copy_camera_system(
         &Transform,
         (
             With<TargetCamera>,
-            Without<RetainedCamera>,
+            Without<RetainedView>,
             Without<RetainedImagePlane>,
         ),
     >,
     mut retained_camera: Single<
         &mut Transform,
         (
-            With<RetainedCamera>,
+            With<RetainedView>,
             Without<RetainedImagePlane>,
             Without<TargetCamera>,
         ),
@@ -33,7 +41,7 @@ pub fn copy_camera_system(
         &mut Transform,
         (
             With<RetainedImagePlane>,
-            Without<RetainedCamera>,
+            Without<RetainedView>,
             Without<TargetCamera>,
         ),
     >,

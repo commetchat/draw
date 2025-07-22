@@ -3,22 +3,25 @@ use bevy::{
     color::Color,
     ecs::{
         component::Component,
-        query::{With, Without},
         system::{ResMut, Single},
     },
     image::Image,
     log::info,
     render::{camera::Camera, render_resource::Extent3d},
-    sprite::ColorMaterial,
-    transform::components::Transform,
     utils::default,
-    window::{Window, WindowResolution},
+    window::Window,
 };
 
-use crate::retained_camera::{RetainedCamera, RetainedTexture, ViewportTextureMaterial};
+use crate::retained_view::{RetainedTexture, RetainedView, ViewportTextureMaterial};
+
+#[derive(Component, Default)]
+pub struct TextureResizer {
+    pub prev_width: u32,
+    pub prev_height: u32,
+}
 
 pub fn resize_texture_system(
-    mut retained_camera: Single<(&mut RetainedCamera, &mut Camera)>,
+    mut retained_camera: Single<(&mut TextureResizer, &mut Camera)>,
     mut images: ResMut<Assets<Image>>,
     mut window: Single<&mut Window>,
     mut materials: ResMut<Assets<ViewportTextureMaterial>>,

@@ -15,20 +15,21 @@ use bevy::{
 
 use crate::{
     RENDER_LAYER_BATCH_STROKES, RENDER_LAYER_RETAINED_IMAGE,
-    retained_camera::{
-        camera_manager::camera_render_toggle_system, copy_camera::copy_camera_system,
-        resize_texture::resize_texture_system,
+    retained_view::{
+        camera_change_detection::{CameraMovementStatusEvent, camera_change_detection_system},
+        copy_camera::{RetainedViewEvent, copy_camera_system},
+        render_manager::{
+            handle_render_events_system, render_loop, render_on_camera_movement_system,
+        },
+        resize_texture::{TextureResizer, resize_texture_system},
     },
 };
 
 pub struct CameraManagerPlugin;
-pub mod camera_manager;
 
-#[derive(Component, Default)]
-pub struct RetainedCamera {
-    prev_width: u32,
-    prev_height: u32,
-    disable_next_frame: bool,
+#[derive(Component, Default, Debug)]
+pub struct RetainedView {
+    frames_until_disabled: i32,
 }
 
 #[derive(Resource)]
@@ -58,17 +59,30 @@ impl Material2d for ViewportTextureMaterial {
     }
 }
 
+pub mod camera_change_detection;
 pub mod copy_camera;
+pub mod render_manager;
 pub mod resize_texture;
 
-pub struct RetainedCameraPlugin;
+pub struct RetainedViewPlugin;
 
-impl Plugin for RetainedCameraPlugin {
+impl Plugin for RetainedViewPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<CameraMovementStatusEvent>();
+        app.add_event::<RetainedViewEvent>();
         app.add_systems(Startup, setup);
         app.add_systems(PostUpdate, copy_camera_system);
-        app.add_systems(PostUpdate, resize_texture_system);
-        app.add_systems(Update, camera_render_toggle_system);
+        app.add_systems(Update, resize_texture_system);
+        app.add_systems(
+            Update,
+            (
+                camera_change_detection_system,
+                render_on_camera_movement_system,
+                handle_render_events_system,
+                render_loop,
+            )
+                .chain(),
+        );
         app.add_plugins(Material2dPlugin::<ViewportTextureMaterial>::default());
     }
 }
@@ -84,7 +98,7 @@ fn setup(
         ..default()
     };
     let mut image = Image::new_fill(
-        size,
+        size.clone(),
         TextureDimension::D2,
         &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         TextureFormat::Rgba32Float,
@@ -105,10 +119,12 @@ fn setup(
             clear_color: Color::linear_rgb(1.0, 0.0, 1.0).into(),
             ..default()
         },
-        RetainedCamera {
-            prev_height: 0,
-            prev_width: 0,
-            disable_next_frame: true,
+        TextureResizer {
+            prev_width: size.width,
+            prev_height: size.height,
+        },
+        RetainedView {
+            frames_until_disabled: 1,
         },
         view_layer.clone(),
     ));
@@ -118,8 +134,8 @@ fn setup(
     });
 
     let plane: Handle<Mesh> = meshes.add(Rectangle::from_size(Vec2 {
-        x: 5000.0,
-        y: 5000.0,
+        x: 50000.0,
+        y: 50000.0,
     }));
 
     commands.insert_resource(RetainedTexture {

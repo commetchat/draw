@@ -34,8 +34,9 @@ use crate::{
     database::{Database, web_database::init_web_database},
     lerp_transform::{LerpTransformPlugin, TargetTransform},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
-    retained_camera::{
-        RetainedCameraPlugin, camera_manager::CameraMovementRender, copy_camera::TargetCamera,
+    retained_view::{
+        RetainedViewPlugin, camera_change_detection::CameraChangeDetector,
+        copy_camera::TargetCamera,
     },
     save_load::SaveLoad,
     stroke::Strokes,
@@ -44,11 +45,11 @@ use crate::{
 };
 
 pub mod camera_controller;
-pub mod retained_camera;
 
 pub mod file_reader;
 pub mod lerp_transform;
 pub mod line_builder;
+pub mod retained_view;
 pub mod save_load;
 pub mod stroke;
 pub mod stylus_drawer;
@@ -58,8 +59,6 @@ pub mod chunks;
 pub mod database;
 pub mod utils;
 pub mod web_input;
-
-use bytes::Buf;
 
 /// This example uses a shader source file from the assets subdirectory
 
@@ -98,7 +97,7 @@ fn main() {
     .add_plugins(StylusInput)
     .add_plugins(StylusDrawer)
     .add_plugins(Database)
-    .add_plugins(RetainedCameraPlugin)
+    .add_plugins(RetainedViewPlugin)
     .add_plugins(LerpTransformPlugin)
     .add_plugins(CameraControllerPlugin)
     .add_systems(Startup, setup);
@@ -150,7 +149,7 @@ fn setup(mut commands: Commands) {
             RENDER_LAYER_RETAINED_IMAGE,
         ]),
         TargetCamera {},
-        CameraMovementRender::default(),
+        CameraChangeDetector::default(),
         TargetTransform::default(),
         ChunkController::default(),
         TouchCameraController::default(),
