@@ -56,17 +56,6 @@ pub fn resize_texture_system(
                     ..default()
                 });
 
-                let mut r = match retained_camera.1.clear_color {
-                    bevy::render::camera::ClearColorConfig::Custom(color) => color.to_linear().red,
-                    _ => todo!(),
-                };
-
-                r += 0.1;
-
-                if r > 1.0 {
-                    r = 0.0;
-                }
-
                 // Have to do this due to: https://github.com/bevyengine/bevy/issues/17350
                 let _ = match materials.get_mut(&texture.material_handle) {
                     Some(_) => {
@@ -74,8 +63,6 @@ pub fn resize_texture_system(
                     }
                     None => (),
                 };
-
-                retained_camera.1.clear_color = Color::linear_rgb(r, 0.0, 1.0).into();
             }
         }
         None => (),

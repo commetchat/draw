@@ -4,7 +4,10 @@ use bevy::{
     window::PrimaryWindow,
 };
 
-use crate::chunks::chunk::{chunk_draw_system, chunk_spawn_system, update_chunk_system};
+use crate::{
+    chunks::chunk::{chunk_draw_system, chunk_spawn_system, update_chunk_system},
+    utils::DEBUG_DRAW,
+};
 
 mod chunk;
 
@@ -63,7 +66,7 @@ fn show_chunks(
 
     let size = window.physical_size();
 
-    let padding = Vec2::new(0.0, 0.0);
+    let padding = -Vec2::new(800.0, 800.0);
 
     let corner = Vec2 {
         x: size.x as f32,
@@ -95,7 +98,9 @@ fn show_chunks(
                 visible_chunk_ids.push((id, chunk_pos));
             }
 
-            gizmos.circle_2d(pos, 10.0, PURPLE);
+            if DEBUG_DRAW {
+                gizmos.circle_2d(pos, 10.0, PURPLE);
+            }
         }
     }
 
@@ -109,7 +114,9 @@ fn show_chunks(
                     visible_chunk_ids.push((id, pos));
                 }
 
-                gizmos.circle_2d(world_pos, 10.0, BLUE);
+                if DEBUG_DRAW {
+                    gizmos.circle_2d(world_pos, 10.0, BLUE);
+                }
             }
 
             position.y += 0.5 * CHUNK_SIZE * scale;

@@ -2,6 +2,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
+pub const DEBUG_DRAW: bool = false;
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = performance, js_name = "now")]

@@ -14,8 +14,9 @@ use crate::{
     CustomMaterial, RENDER_LAYER_BATCH_STROKES,
     chunks::{CHUNK_SIZE, ChunkEvent},
     database::{LOAD_MESH_QUEUE, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData},
+    retained_view::copy_camera::RetainedViewEvent,
     stroke::{self, Stroke, StrokeMesh},
-    utils::now,
+    utils::{DEBUG_DRAW, now},
 };
 
 #[derive(Component, Default)]
@@ -30,33 +31,36 @@ pub fn chunk_draw_system(chunks: Query<(Entity, &Chunk, &Mesh2d)>, mut gizmos: G
     for chunk in chunks.iter() {
         let pos = chunk.1.position;
         let padding = Vec2 { x: 20.0, y: 20.0 };
-        gizmos.line_2d(
-            pos + padding,
-            pos + Vec2 {
-                x: CHUNK_SIZE - padding.x,
-                y: padding.y,
-            },
-            Color::LinearRgba(LinearRgba {
-                red: 0.5,
-                green: 0.5,
-                blue: 0.0,
-                alpha: 1.0,
-            }),
-        );
 
-        gizmos.line_2d(
-            pos + padding,
-            pos + Vec2 {
-                x: padding.x,
-                y: CHUNK_SIZE - padding.y,
-            },
-            Color::LinearRgba(LinearRgba {
-                red: 0.5,
-                green: 0.0,
-                blue: 0.5,
-                alpha: 1.0,
-            }),
-        );
+        if DEBUG_DRAW {
+            gizmos.line_2d(
+                pos + padding,
+                pos + Vec2 {
+                    x: CHUNK_SIZE - padding.x,
+                    y: padding.y,
+                },
+                Color::LinearRgba(LinearRgba {
+                    red: 0.5,
+                    green: 0.5,
+                    blue: 0.0,
+                    alpha: 1.0,
+                }),
+            );
+
+            gizmos.line_2d(
+                pos + padding,
+                pos + Vec2 {
+                    x: padding.x,
+                    y: CHUNK_SIZE - padding.y,
+                },
+                Color::LinearRgba(LinearRgba {
+                    red: 0.5,
+                    green: 0.0,
+                    blue: 0.5,
+                    alpha: 1.0,
+                }),
+            );
+        }
     }
 }
 
@@ -119,6 +123,7 @@ pub fn chunk_spawn_system(
 pub fn update_chunk_system(
     mut chunks: Query<(&mut Chunk, &mut Mesh2d)>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut render_events: EventWriter<RetainedViewEvent>,
     mut materials: ResMut<Assets<CustomMaterial>>,
 ) {
     let a = now();
@@ -164,6 +169,7 @@ pub fn update_chunk_system(
         };
 
         handle_queue(mesh, queue);
+        render_events.write(RetainedViewEvent::UpdateFrame);
         chunk.0.finished_loading = true;
     }
 

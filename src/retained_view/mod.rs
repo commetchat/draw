@@ -14,7 +14,7 @@ use bevy::{
 };
 
 use crate::{
-    RENDER_LAYER_BATCH_STROKES, RENDER_LAYER_RETAINED_IMAGE,
+    BACKGROUND, RENDER_LAYER_BATCH_STROKES, RENDER_LAYER_RETAINED_IMAGE,
     retained_view::{
         camera_change_detection::{CameraMovementStatusEvent, camera_change_detection_system},
         copy_camera::{RetainedViewEvent, copy_camera_system},
@@ -23,6 +23,7 @@ use crate::{
         },
         resize_texture::{TextureResizer, resize_texture_system},
     },
+    utils::DEBUG_DRAW,
 };
 
 pub struct CameraManagerPlugin;
@@ -116,7 +117,11 @@ fn setup(
         Camera {
             order: -1,
             target: handle.clone().into(),
-            clear_color: Color::linear_rgb(1.0, 0.0, 1.0).into(),
+            clear_color: if DEBUG_DRAW {
+                Color::linear_rgb(1.0, 0.0, 1.0).into()
+            } else {
+                BACKGROUND.into()
+            },
             ..default()
         },
         TextureResizer {

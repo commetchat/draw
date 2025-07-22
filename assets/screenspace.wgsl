@@ -7,11 +7,22 @@
 @group(2) @binding(0) var texture: texture_2d<f32>;
 @group(2) @binding(1) var texture_sampler: sampler;
 
+struct FragOut {
+    @location(0) color: vec4<f32>,
+    @builtin(frag_depth) depth: f32
+}
+
 @fragment
 fn fragment(
     mesh: VertexOutput,
-) -> @location(0) vec4<f32> {
+) -> FragOut {
+    var out: FragOut;
+
     let viewport_uv = coords_to_viewport_uv(mesh.position.xy, view.viewport);
     let color = textureSample(texture, texture_sampler, viewport_uv);
-    return color;
+
+    out.color = color;
+    out.depth = 0.0;
+    
+    return out;
 }

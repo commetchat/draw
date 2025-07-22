@@ -62,7 +62,7 @@ pub mod web_input;
 
 /// This example uses a shader source file from the assets subdirectory
 
-const BACKGROUND: Color = Color::srgb(0.1, 0.1, 0.1);
+pub const BACKGROUND: Color = Color::srgb(0.1, 0.1, 0.1);
 
 const RENDER_LAYER_BATCH_STROKES: usize = 0;
 const RENDER_LAYER_RETAINED_IMAGE: usize = 1;
