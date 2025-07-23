@@ -16,8 +16,8 @@ declare global {
   interface Window { gameDatabase: WebDatabase; }
 }
 
-async function initGame() {
-  window.gameDatabase = new WebDatabase()
+async function initGame(instance_id: string) {
+  window.gameDatabase = new WebDatabase(instance_id)
   game.default();
 }
 
@@ -43,9 +43,33 @@ function openFile() {
   input.click();
 }
 
-const App: Component = () => {
+interface NetworkDelegate {
+  send_to: (message: Uint8Array, to: String) => void;
+  on_received: ((message: Uint8Array, from: String) => void) | null;
+  on_peer_connected: ((from: String) => void) | null;
+  on_peer_disconnected: ((from: String) => void) | null;
+}
 
-  initGame();
+interface AppProps {
+  instance_id: string,
+  delegate: NetworkDelegate,
+}
+
+const App: Component<AppProps> = (props) => {
+
+  initGame(props.instance_id);
+
+  props.delegate.on_received = (message, from) => {
+
+  }
+
+  props.delegate.on_peer_connected = (from) => {
+
+  }
+
+  props.delegate.on_peer_disconnected = (from) => {
+
+  }
 
   let [getLines, setLines] = createSignal<string>("")
   let original = console.log;
@@ -56,6 +80,10 @@ const App: Component = () => {
   //   let s = getLines();
   //   setLines(`${e}\n` + s);
   // }
+
+  const save_to_file = () => {
+    window.gameDatabase.save_to_file()
+  }
 
 
 
@@ -68,7 +96,7 @@ const App: Component = () => {
         </div>
         <div style={"z-index: 2; position: absolute; top: 0; left: 0;"}>
           <md-filled-icon-button onclick={openFile} >Open File</md-filled-icon-button>
-          <md-filled-button onclick={() => game.greet("Test")}>hello!</md-filled-button>
+          <md-filled-button onclick={save_to_file}>Save File</md-filled-button>
           <textarea style={"width: 75vw; height: 20vh; position: absolute"} disabled value={getLines()}>
           </textarea>
 
@@ -79,3 +107,4 @@ const App: Component = () => {
 };
 
 export default App;
+export type { NetworkDelegate };

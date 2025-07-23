@@ -18,7 +18,7 @@ use crate::{
     database::DATABASE_READY,
     file_reader::{self, read_string},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
-    stroke::{Stroke, StrokeData, StrokeEvent, StrokeMesh, StrokeMetadata},
+    stroke::{Stroke, StrokeData, StrokeEvent, StrokeMesh, StrokeMetadata, StrokeType},
 };
 
 pub struct SaveLoad;
@@ -61,7 +61,7 @@ fn setup(
         }
 
         let stroke = read_stroke(None, &mut reader);
-        let n_points = { stroke.data.points.as_ref().unwrap().len() };
+        let n_points = { stroke.data.points.len() };
         if n_points > 0 {
             events.write(StrokeEvent::StrokeFinished(stroke));
         }
@@ -80,7 +80,7 @@ fn setup(
             }
 
             let stroke = read_stroke(Some(id.clone()), &mut reader);
-            let n_points = { stroke.data.points.as_ref().unwrap().len() };
+            let n_points = { stroke.data.points.len() };
             if n_points > 0 {
                 events.write(StrokeEvent::StrokeFinished(stroke));
             }
@@ -109,16 +109,20 @@ fn read_stroke(owner_id: Option<String>, reader: &mut bytes::buf::Reader<&[u8]>)
 
     builder.width = width;
 
-    let stroke_type = file_reader::read_u8(reader).unwrap();
+    let stroke_type_num = file_reader::read_u8(reader).unwrap();
 
     let mut col = BACKGROUND;
 
-    if stroke_type == 1 {
+    let mut stroke_type = StrokeType::Eraser;
+
+    if stroke_type_num == 1 {
         let r = file_reader::read_u8(reader).unwrap();
         let g = file_reader::read_u8(reader).unwrap();
         let b = file_reader::read_u8(reader).unwrap();
 
         col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
+
+        stroke_type = StrokeType::Paint(col);
     }
 
     let num_points = file_reader::read_u32(reader).unwrap();
@@ -185,7 +189,7 @@ fn read_stroke(owner_id: Option<String>, reader: &mut bytes::buf::Reader<&[u8]>)
                 y: origin_y,
             },
         },
-        data: StrokeData::new(points, pressures),
+        data: StrokeData::new(points, pressures, stroke_type),
         mesh: StrokeMesh::new(vertices, indices, colors),
     }
 }

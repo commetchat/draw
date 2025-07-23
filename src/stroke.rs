@@ -1,51 +1,37 @@
 use bevy::{
     app::{App, Plugin},
+    color::{Color, ColorToPacked},
     ecs::event::Event,
-    log::info,
     math::Vec2,
 };
 use binary_util::{ByteReader, ByteWriter};
 use safe_transmute::{SingleManyGuard, base::transmute_many, transmute_to_bytes};
-use wasm_bindgen::prelude::wasm_bindgen;
 
-#[wasm_bindgen]
-#[derive(Eq, PartialEq, Debug, Clone)]
 pub enum StrokeType {
-    paint,
-    eraser,
+    Paint(Color),
+    Eraser,
 }
 
 pub struct StrokeData {
-    binary_data: Option<Vec<u8>>,
-
-    pub points: Option<Vec<Vec2>>,
+    pub stroke_type: StrokeType,
+    pub points: Vec<Vec2>,
     pub pressures: Option<Vec<f32>>,
 }
 
-struct StrokeHeader {
-    num_points: u32,
-    num_pressures: u32,
-}
-
 impl StrokeData {
-    pub fn new(points: Vec<Vec2>, pressures: Option<Vec<f32>>) -> StrokeData {
+    pub fn new(
+        points: Vec<Vec2>,
+        pressures: Option<Vec<f32>>,
+        stroke_type: StrokeType,
+    ) -> StrokeData {
         StrokeData {
-            points: Some(points),
+            points: points,
             pressures: pressures,
-            binary_data: None,
+            stroke_type: stroke_type,
         }
     }
 
-    pub fn from_bytes(data: Vec<u8>) -> StrokeData {
-        StrokeData {
-            binary_data: Some(data),
-            points: None,
-            pressures: None,
-        }
-    }
-
-    pub fn parse(&mut self) {
-        let data = self.binary_data.as_ref().unwrap();
+    pub fn parse(data: Vec<u8>) -> StrokeData {
         let mut reader = ByteReader::from(data.as_slice());
 
         let mut points = Vec::new();
@@ -63,26 +49,33 @@ impl StrokeData {
             pressures.push(p);
         }
 
-        self.points = Some(points);
-        self.pressures = Some(pressures);
+        StrokeData {
+            stroke_type: StrokeType::Eraser,
+            points: points,
+            pressures: Some(pressures),
+        }
     }
 
     pub fn write_data(&self) -> Vec<u8> {
         let mut writer = ByteWriter::new();
 
-        match &self.points {
-            Some(points) => {
-                writer.write_u32(u32::try_from(points.len()).unwrap());
+        match self.stroke_type {
+            StrokeType::Paint(color) => {
+                writer.write_u8(1);
+                let color = color.to_srgba().to_u8_array_no_alpha();
+                writer.write(&color);
+            }
+            StrokeType::Eraser => {
+                writer.write_u8(2);
+            }
+        }
 
-                for point in points.iter() {
-                    writer.write_f32(point.x);
-                    writer.write_f32(point.y);
-                }
-            }
-            None => {
-                writer.write_u32(0);
-            }
-        };
+        writer.write_u32(u32::try_from(self.points.len()).unwrap());
+
+        for point in self.points.iter() {
+            writer.write_f32(point.x);
+            writer.write_f32(point.y);
+        }
 
         match &self.pressures {
             Some(pressures) => {
@@ -110,10 +103,7 @@ pub struct StrokeMetadata {
 
 impl StrokeMetadata {
     pub fn get_id(&self) -> String {
-        match &self.owner {
-            Some(owner) => format!("{}_{}_{owner}", self.timestamp, self.id_random),
-            None => format!("{}_{}", self.timestamp, self.id_random),
-        }
+        format!("{}_{}", self.timestamp, self.id_random)
     }
 }
 

@@ -1,16 +1,20 @@
 import * as game from './bevy/draw-bevy';
+import { BinaryWriter } from './utils/binary_writer';
+import { downloadBlob } from './utils/download';
+import { merge_arrays_uint32, merge_arrays_uint8 } from './utils/merge_arrays';
 
 let db: IDBDatabase | null
 
 self.onmessage = function (e) {
     if (e.data.type == "init_db") {
+        let id = e.data.data;
         //  console.log = (e) => {
         //      postMessage({
         //          type: "log",
         //          data: e,
         //      })
         //  }
-        initDb();
+        initDb(id);
     }
 
     if (e.data.type == "store_multiple_strokes") {
@@ -19,6 +23,10 @@ self.onmessage = function (e) {
 
     if (e.data.type == "load_mesh_for_chunk") {
         load_mesh_for_chunk(e.data.data);
+    }
+
+    if (e.data.type == "save_to_file") {
+        save_to_file();
     }
 }
 
@@ -32,10 +40,10 @@ type MeshData = {
     colors: Uint8Array,
 }
 
-function clearDb(): Promise<void> {
+function clearDb(instance_id: string): Promise<void> {
     console.log("Clearing database");
     return new Promise(resolve => {
-        var request = indexedDB.deleteDatabase("strokeStorage");
+        var request = indexedDB.deleteDatabase(`${instance_id}_strokeStorage`);
         console.log("Created request");
 
 
@@ -44,11 +52,11 @@ function clearDb(): Promise<void> {
     });
 }
 
-function initDb() {
+function initDb(instance_id: string) {
     console.log("Initializing database");
-    clearDb().then(() => {
+    clearDb(instance_id).then(() => {
         console.log("Creating database");
-        var request = indexedDB.open("strokeStorage", 3);
+        var request = indexedDB.open(`${instance_id}_strokeStorage`, 3);
 
         request.onupgradeneeded = event => {
             console.log("Upgrade needed");
@@ -200,18 +208,107 @@ function load_mesh_for_chunk(id: string) {
 
 }
 
-function merge_arrays_uint8(a: Uint8Array, b: Uint8Array): Uint8Array {
-    var mergedArray = new Uint8Array(a.length + b.length);
-    mergedArray.set(a);
-    mergedArray.set(b, a.length);
+function save_to_file() {
+    const tx = db?.transaction(strokes, "readonly");
+    const store = tx?.objectStore(strokes);
+    var cursorRequest = store!.index('chunk_key').openCursor(null, 'next');
 
-    return mergedArray;
+    var writer = new BinaryWriter();
+    let magic = new TextEncoder().encode("draw");
+
+    writer.writeBytes(magic);
+    writer.writeUint32(1);
+
+    let currentChunkKey: string | null = null;
+    let chunkStrokes: game.StrokeData[] = [];
+
+    cursorRequest.onsuccess = function (e) {
+
+        var cursor = (e as any).target.result;
+        if (cursor) {
+            let stroke = cursor.value as game.StrokeData;
+
+            if (currentChunkKey != stroke.chunk_key) {
+                if (currentChunkKey != null) {
+
+                    writeStrokes(writer, currentChunkKey, chunkStrokes)
+                }
+
+                currentChunkKey = stroke.chunk_key
+                chunkStrokes = [];
+            }
+
+            chunkStrokes.push(stroke);
+            cursor.continue();
+        }
+        else {
+            let buffer = writer.getBuffer();
+
+            postMessage({
+                type: "prompt_save_file",
+                data: {
+                    name: "canvas.bin",
+                    mime: 'application/octet-stream',
+                    data: buffer
+                }
+            }, {
+                transfer: [buffer]
+            })
+        }
+    };
+
 }
 
-function merge_arrays_uint32(a: Uint32Array, b: Uint32Array): Uint32Array {
-    var mergedArray = new Uint32Array(a.length + b.length);
-    mergedArray.set(a);
-    mergedArray.set(b, a.length);
+function writeStrokes(writer: BinaryWriter, currentChunkKey: string, chunkStrokes: game.StrokeData[]) {
+    console.log("Writing chunk: ", currentChunkKey);
+    console.log(chunkStrokes);
+    writer.writeString(currentChunkKey);
 
-    return mergedArray;
+    var ownerToStrokes: Map<string, game.StrokeData[]> = new Map();
+
+    chunkStrokes.forEach((stroke) => {
+        let id = stroke.owner_id;
+        if (id == undefined) {
+            id = "";
+        }
+
+        if (!ownerToStrokes.has(id)) {
+            ownerToStrokes.set(id, [])
+        }
+
+        let array = ownerToStrokes.get(id)!;
+        array.push(stroke);
+
+        ownerToStrokes.set(id, array);
+    });
+
+    let keys = chunkStrokes.keys().toArray();
+    writer.writeUint32(keys.length);
+
+
+    ownerToStrokes.keys().forEach((key) => {
+        let strokes = ownerToStrokes.get(key)!;
+        console.log(`Writing ${strokes.length} strokes from '${key}' to chunk ${currentChunkKey}`)
+
+        if (key == "") {
+            writer.writeUint8(0);
+        } else {
+            writer.writeUint8(1);
+            writer.writeString(key);
+        }
+
+        writer.writeUint32(strokes.length);
+
+        strokes.forEach((stroke) => {
+
+            writer.writeUint32(stroke.id_random)
+            writer.writeFloat64(stroke.timestamp)
+            writer.writeFloat32(stroke.origin_x);
+            writer.writeFloat32(stroke.origin_y);
+            writer.writeBytes(stroke.stroke_data);
+        });
+    });
 }
+
+
+

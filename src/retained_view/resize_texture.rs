@@ -3,6 +3,7 @@ use bevy::{
     color::Color,
     ecs::{
         component::Component,
+        event::EventWriter,
         system::{ResMut, Single},
     },
     image::Image,
@@ -12,7 +13,9 @@ use bevy::{
     window::Window,
 };
 
-use crate::retained_view::{RetainedTexture, RetainedView, ViewportTextureMaterial};
+use crate::retained_view::{
+    RetainedTexture, RetainedView, ViewportTextureMaterial, copy_camera::RetainedViewEvent,
+};
 
 #[derive(Component, Default)]
 pub struct TextureResizer {
@@ -26,6 +29,8 @@ pub fn resize_texture_system(
     mut window: Single<&mut Window>,
     mut materials: ResMut<Assets<ViewportTextureMaterial>>,
     mut texture: ResMut<RetainedTexture>,
+
+    mut render_events: EventWriter<RetainedViewEvent>,
 ) {
     let height = window.physical_height();
     let width = window.physical_width();
@@ -55,6 +60,8 @@ pub fn resize_texture_system(
                     height: window.physical_height(),
                     ..default()
                 });
+
+                render_events.write(RetainedViewEvent::UpdateFrame);
 
                 // Have to do this due to: https://github.com/bevyengine/bevy/issues/17350
                 let _ = match materials.get_mut(&texture.material_handle) {

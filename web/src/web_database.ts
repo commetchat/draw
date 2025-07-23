@@ -1,16 +1,19 @@
 import * as game from './bevy/draw-bevy';
 import { MeshData } from './bevy/draw-bevy';
+import { downloadBlob } from './utils/download';
 import Worker from './worker?worker';
 
 
 export class WebDatabase {
-    constructor() {
+
+    constructor(instance_id: string) {
         this.db = null;
         this.worker = new Worker()
-
+        this.instance_id = instance_id;
         this.worker.onmessage = handleMessage
     }
 
+    instance_id: string
     db: IDBDatabase | null
     worker: Worker
 
@@ -18,8 +21,10 @@ export class WebDatabase {
     init() {
         this.worker.postMessage({
             type: "init_db",
+            data: this.instance_id,
         });
     }
+
 
     store_multiple_strokes(items: [game.StrokeData]) {
 
@@ -28,6 +33,7 @@ export class WebDatabase {
                 id: a.id,
                 id_random: a.id_random,
                 timestamp: a.timestamp,
+                owner_id: a.owner_id,
                 chunk_key: a.chunk_key,
                 origin_x: a.origin_x,
                 origin_y: a.origin_y,
@@ -50,6 +56,13 @@ export class WebDatabase {
             data: id
         })
     }
+
+    save_to_file() {
+        this.worker.postMessage({
+            type: "save_to_file",
+        });
+    }
+
 }
 
 function handleMessage(message: MessageEvent<any>) {
@@ -64,6 +77,10 @@ function handleMessage(message: MessageEvent<any>) {
     if (message.data.type == "log") {
         console.log(message.data.data);
     }
+
+    if (message.data.type == "prompt_save_file") {
+        prompt_save_file(message.data.data);
+    }
 }
 
 function handle_mesh_loaded(data: any) {
@@ -77,5 +94,10 @@ function handle_mesh_loaded(data: any) {
 function handle_database_ready() {
     console.log("Database is ready!");
     game.db_ready();
+}
+
+
+function prompt_save_file(data: any) {
+    downloadBlob(new Uint8Array(data.data), data.name, data.mime);
 }
 
