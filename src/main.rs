@@ -38,7 +38,6 @@ use crate::{
         RetainedViewPlugin, camera_change_detection::CameraChangeDetector,
         copy_camera::TargetCamera,
     },
-    save_load::SaveLoad,
     stroke::Strokes,
     stylus_drawer::StylusDrawer,
     stylus_input::StylusInput,
@@ -51,7 +50,6 @@ pub mod lerp_transform;
 pub mod line_builder;
 pub mod load_file;
 pub mod retained_view;
-pub mod save_load;
 pub mod stroke;
 pub mod stylus_drawer;
 pub mod stylus_input;
@@ -94,7 +92,6 @@ fn main() {
     .add_plugins(Material2dPlugin::<CustomMaterial>::default())
     .add_plugins(ChunksPlugin)
     .add_plugins(Strokes)
-    //.add_plugins(SaveLoad)
     .add_plugins(StylusInput)
     .add_plugins(StylusDrawer)
     .add_plugins(Database)
