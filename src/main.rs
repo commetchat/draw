@@ -49,6 +49,7 @@ pub mod camera_controller;
 pub mod file_reader;
 pub mod lerp_transform;
 pub mod line_builder;
+pub mod load_file;
 pub mod retained_view;
 pub mod save_load;
 pub mod stroke;
@@ -93,7 +94,7 @@ fn main() {
     .add_plugins(Material2dPlugin::<CustomMaterial>::default())
     .add_plugins(ChunksPlugin)
     .add_plugins(Strokes)
-    .add_plugins(SaveLoad)
+    //.add_plugins(SaveLoad)
     .add_plugins(StylusInput)
     .add_plugins(StylusDrawer)
     .add_plugins(Database)

@@ -13,7 +13,10 @@ use bevy::{
 use crate::{
     CustomMaterial, RENDER_LAYER_BATCH_STROKES,
     chunks::{CHUNK_SIZE, ChunkEvent},
-    database::{LOAD_MESH_QUEUE, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData},
+    database::{
+        CHUNKS_NEED_RELOADING, DATABASE_READY, LOAD_MESH_QUEUE, web_database::load_mesh_for_chunk,
+        web_stroke_data::JsMeshData,
+    },
     retained_view::copy_camera::RetainedViewEvent,
     stroke::{self, Stroke, StrokeMesh},
     utils::{DEBUG_DRAW, now},
@@ -126,9 +129,24 @@ pub fn update_chunk_system(
     mut render_events: EventWriter<RetainedViewEvent>,
     mut materials: ResMut<Assets<CustomMaterial>>,
 ) {
+    let ready = DATABASE_READY.lock().unwrap();
+    if *ready == false {
+        return;
+    }
+
+    let mut needs_reloading = CHUNKS_NEED_RELOADING.lock().unwrap();
+
     let a = now();
     for mut chunk in chunks.iter_mut() {
-        if chunk.0.has_requested_db_chunks == false {
+        let chunk_needs_reloading = needs_reloading.contains(&chunk.0.chunk_id);
+        let i = needs_reloading.iter().position(|r| r == &chunk.0.chunk_id);
+
+        if chunk.0.has_requested_db_chunks == false || i.is_some() {
+            if (i.is_some()) {
+                needs_reloading.remove(i.unwrap());
+                info!("Reloading chunk: {}", chunk.0.chunk_id);
+            }
+
             chunk.0.has_requested_db_chunks = true;
             load_mesh_for_chunk(chunk.0.chunk_id.clone());
         }

@@ -189,7 +189,7 @@ fn read_stroke(owner_id: Option<String>, reader: &mut bytes::buf::Reader<&[u8]>)
                 y: origin_y,
             },
         },
-        data: StrokeData::new(points, pressures, stroke_type),
-        mesh: StrokeMesh::new(vertices, indices, colors),
+        data: StrokeData::new(points, pressures, width, stroke_type),
+        mesh: Some(StrokeMesh::new(vertices, indices, colors)),
     }
 }

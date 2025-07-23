@@ -1,19 +1,22 @@
 use bevy::{
     app::{App, Plugin},
-    color::{Color, ColorToPacked},
+    color::{Color, ColorToPacked, LinearRgba, Srgba},
     ecs::event::Event,
     math::Vec2,
 };
 use binary_util::{ByteReader, ByteWriter};
 use safe_transmute::{SingleManyGuard, base::transmute_many, transmute_to_bytes};
 
+#[derive(Clone)]
 pub enum StrokeType {
     Paint(Color),
     Eraser,
 }
 
+#[derive(Clone)]
 pub struct StrokeData {
     pub stroke_type: StrokeType,
+    pub width: f32,
     pub points: Vec<Vec2>,
     pub pressures: Option<Vec<f32>>,
 }
@@ -22,10 +25,12 @@ impl StrokeData {
     pub fn new(
         points: Vec<Vec2>,
         pressures: Option<Vec<f32>>,
+        width: f32,
         stroke_type: StrokeType,
     ) -> StrokeData {
         StrokeData {
             points: points,
+            width: width,
             pressures: pressures,
             stroke_type: stroke_type,
         }
@@ -33,6 +38,25 @@ impl StrokeData {
 
     pub fn parse(data: Vec<u8>) -> StrokeData {
         let mut reader = ByteReader::from(data.as_slice());
+
+        let type_byte = reader.read_u8().unwrap();
+
+        let stroke_type = match type_byte {
+            1 => {
+                let r = reader.read_u8().unwrap();
+                let g = reader.read_u8().unwrap();
+                let b = reader.read_u8().unwrap();
+
+                let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
+                StrokeType::Paint(col)
+            }
+            2 => StrokeType::Eraser,
+            _ => {
+                panic!();
+            }
+        };
+
+        let width = reader.read_f32().unwrap();
 
         let mut points = Vec::new();
 
@@ -50,7 +74,8 @@ impl StrokeData {
         }
 
         StrokeData {
-            stroke_type: StrokeType::Eraser,
+            stroke_type: stroke_type,
+            width: width,
             points: points,
             pressures: Some(pressures),
         }
@@ -69,6 +94,8 @@ impl StrokeData {
                 writer.write_u8(2);
             }
         }
+
+        writer.write_f32(self.width);
 
         writer.write_u32(u32::try_from(self.points.len()).unwrap());
 
@@ -164,7 +191,7 @@ impl StrokeMesh {
 pub struct Stroke {
     pub metadata: StrokeMetadata,
     pub data: StrokeData,
-    pub mesh: StrokeMesh,
+    pub mesh: Option<StrokeMesh>,
 }
 
 pub struct Strokes;

@@ -9,7 +9,7 @@ export class BinaryWriter {
         this.buffer = new ArrayBuffer(size);
         this.view = new DataView(this.buffer);
         this.offset = 0;
-        this.littleEndian = true;
+        this.littleEndian = false;
     }
 
     ensureCapacity(bytes: number) {

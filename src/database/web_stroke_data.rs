@@ -17,9 +17,9 @@ pub struct JsStrokeData {
     pub origin_y: f32,
     pub owner_id: Option<String>,
     pub stroke_data: Vec<u8>,
-    pub vertex_data: Vec<u8>,
-    pub index_data: Vec<u32>,
-    pub color_data: Vec<u8>,
+    pub vertex_data: Option<Vec<u8>>,
+    pub index_data: Option<Vec<u32>>,
+    pub color_data: Option<Vec<u8>>,
 }
 
 #[wasm_bindgen(getter_with_clone, js_name = "MeshData")]
@@ -60,9 +60,9 @@ impl JsStrokeData {
         origin_y: f32,
         owner_id: Option<String>,
         stroke_data: Vec<u8>,
-        vertex_data: Vec<u8>,
-        index_data: Vec<u32>,
-        color_data: Vec<u8>,
+        vertex_data: Option<Vec<u8>>,
+        index_data: Option<Vec<u32>>,
+        color_data: Option<Vec<u8>>,
     ) -> JsStrokeData {
         JsStrokeData {
             id: id,
@@ -82,11 +82,18 @@ impl JsStrokeData {
 
 impl JsStrokeData {
     pub fn from_stroke(stroke: &Stroke) -> JsStrokeData {
-        let mut writer = ByteWriter::new();
-
         let binary_data = stroke.data.write_data();
 
         let chunk_key = position_to_chunk_id(stroke.metadata.origin);
+
+        let mesh_data = match &stroke.mesh {
+            Some(mesh) => (
+                Some(mesh.write_vertex_data()),
+                Some(mesh.indices.clone()),
+                Some(mesh.write_color_data()),
+            ),
+            None => (None, None, None),
+        };
 
         return JsStrokeData {
             id: stroke.metadata.get_id(),
@@ -97,9 +104,9 @@ impl JsStrokeData {
             origin_y: stroke.metadata.origin.y,
             owner_id: stroke.metadata.owner.clone(),
             stroke_data: binary_data,
-            vertex_data: stroke.mesh.write_vertex_data(),
-            index_data: stroke.mesh.indices.clone(),
-            color_data: stroke.mesh.write_color_data(),
+            vertex_data: mesh_data.0,
+            index_data: mesh_data.1,
+            color_data: mesh_data.2,
         };
     }
 }

@@ -40,6 +40,9 @@ pub struct Database;
 pub static LOAD_MESH_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<JsMeshData>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
+pub static CHUNKS_NEED_RELOADING: LazyLock<Mutex<Vec<String>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
+
 pub static DATABASE_READY: Mutex<bool> = Mutex::new(false);
 
 impl Plugin for Database {
@@ -87,6 +90,13 @@ pub fn db_on_mesh_loaded(mesh: JsMeshData) {
     let queue = map.get_mut(&mesh.chunk_key).unwrap();
 
     queue.push_back(mesh);
+}
+
+#[wasm_bindgen]
+pub fn db_chunk_needs_reloading(chunk: String) {
+    info!("Chunk needs reloading: {}", chunk);
+    let mut list = CHUNKS_NEED_RELOADING.lock().unwrap();
+    list.push(chunk);
 }
 
 #[wasm_bindgen]

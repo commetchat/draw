@@ -50,6 +50,35 @@ export class WebDatabase {
         })
     }
 
+    set_initial_chunk_state(chunk_key: string, vertex_data: Uint8Array, index_data: Uint32Array, color_data: Uint8Array, strokes: [game.StrokeData]) {
+        let converted_strokes = strokes.map((a) => {
+            return {
+                id: a.id,
+                id_random: a.id_random,
+                timestamp: a.timestamp,
+                owner_id: a.owner_id,
+                chunk_key: a.chunk_key,
+                origin_x: a.origin_x,
+                origin_y: a.origin_y,
+                stroke_data: a.stroke_data,
+                vertex_data: a.vertex_data,
+                index_data: a.index_data,
+                color_data: a.color_data,
+            }
+        })
+
+        this.worker.postMessage({
+            type: "set_initial_chunk_state",
+            data: {
+                chunk_key: chunk_key,
+                vertex_data: vertex_data.buffer,
+                index_data: index_data.buffer,
+                color_data: color_data.buffer,
+                strokes: converted_strokes,
+            }
+        }, [vertex_data.buffer, index_data.buffer, color_data.buffer])
+    }
+
     load_mesh_for_chunk(id: string) {
         this.worker.postMessage({
             type: "load_mesh_for_chunk",
@@ -80,6 +109,10 @@ function handleMessage(message: MessageEvent<any>) {
 
     if (message.data.type == "prompt_save_file") {
         prompt_save_file(message.data.data);
+    }
+
+    if (message.data.type == "do_full_chunk_reload") {
+        game.db_chunk_needs_reloading(message.data.data.chunk_key);
     }
 }
 

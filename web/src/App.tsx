@@ -18,6 +18,7 @@ declare global {
 
 async function initGame(instance_id: string) {
   window.gameDatabase = new WebDatabase(instance_id)
+
   game.default();
 }
 
@@ -31,12 +32,13 @@ function openFile() {
 
     // setting up the reader
     var reader = new FileReader();
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsArrayBuffer(file);
 
     // here we tell the reader what to do when it's done reading...
     reader.onload = readerEvent => {
       var content = (readerEvent as any).target.result; // this is the content!
-      console.log(content);
+
+      game.load_file(new Uint8Array(content))
     }
   }
 
