@@ -1,0 +1,25 @@
+.hue-picker {
+    --md-slider-active-track-height: 0px;
+    --md-slider-inactive-track-color: linear-gradient(90deg,
+            hsl(0, 100%, 50%),
+            hsl(30, 100%, 50%),
+            hsl(60, 100%, 50%),
+            hsl(90, 100%, 50%),
+            hsl(120, 100%, 50%),
+            hsl(150, 100%, 50%),
+            hsl(180, 100%, 50%),
+            hsl(210, 100%, 50%),
+            hsl(240, 100%, 50%),
+            hsl(270, 100%, 50%),
+            hsl(300, 100%, 50%),
+            hsl(330, 100%, 50%),
+            hsl(360, 100%, 50%));
+    --md-slider-inactive-track-height: 15px;
+    --md-slider-handle-shadow-color: black;
+    --md-slider-handle-height: 30px;
+    --md-slider-handle-width: 30px;
+}
+
+md-slider {
+    width: 100%;
+}

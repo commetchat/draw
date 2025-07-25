@@ -3,13 +3,13 @@ import { createSignal, type Component } from 'solid-js';
 import logo from './logo.svg';
 import styles from './App.module.css';
 
-import * as game from './bevy/draw-bevy';
+import * as game from '../bevy/draw-bevy';
 
 
 import '@material/web/iconbutton/filled-icon-button';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
-import App, { NetworkDelegate } from './App';
+import App, { NetworkDelegate } from '../organisms/app';
 import { useSearchParams } from '@solidjs/router';
 
 

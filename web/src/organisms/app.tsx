@@ -3,13 +3,15 @@ import { createSignal, type Component } from 'solid-js';
 import logo from './logo.svg';
 import styles from './App.module.css';
 
-import * as game from './bevy/draw-bevy';
+import * as game from '../bevy/draw-bevy';
 
 
 import '@material/web/iconbutton/filled-icon-button';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
-import { WebDatabase } from './web_database';
+import { WebDatabase } from '../web_database';
+import UI from './ui';
+import { UIMessage } from '../bindings/ui_binding';
 
 
 declare global {
@@ -76,18 +78,34 @@ const App: Component<AppProps> = (props) => {
   let [getLines, setLines] = createSignal<string>("")
   let original = console.log;
 
-  // console.log = (e) => {
-  //   original(e);
-  // 
-  //   let s = getLines();
-  //   setLines(`${e}\n` + s);
-  // }
+  console.log = (e) => {
+    original(e);
+
+    let s = getLines();
+    setLines((`${e}\n` + s).substring(0, 2000));
+  }
 
   const save_to_file = () => {
     window.gameDatabase.save_to_file()
   }
 
 
+
+  function handleUIMessage(message: UIMessage): void {
+
+    if (message.type == "LoadFile") {
+      openFile()
+      return;
+    }
+
+    if (message.type == "SaveFile") {
+      save_to_file()
+      return;
+    }
+
+    let msg = JSON.stringify(message);
+    console.log("Passing UI Message to Game: " + msg,);
+  }
 
   return (
     <div class={styles.App}>
@@ -96,13 +114,16 @@ const App: Component<AppProps> = (props) => {
         <div style={"width: 100vw; height: 100vh;  overflow: hidden;"}>
           <canvas style={"z-index: 1; position: relative;"} id="bevy-portal"></canvas>
         </div>
-        <div style={"z-index: 2; position: absolute; top: 0; left: 0;"}>
-          <md-filled-icon-button onclick={openFile} >Open File</md-filled-icon-button>
-          <md-filled-button onclick={save_to_file}>Save File</md-filled-button>
-          <textarea style={"width: 75vw; height: 20vh; position: absolute"} disabled value={getLines()}>
-          </textarea>
 
+        <div class='pointer-events-none text-white text-xs ' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
+          <div style={"position: absolute; right: 0; top: 0;"}>
+            <textarea class='pointer-events-auto' style={"width: 75vw; height: 20vh; "} value={getLines()} disabled>
+            </textarea>
+          </div>
         </div>
+
+
+        <UI callback={handleUIMessage} />
       </header>
     </div >
   );

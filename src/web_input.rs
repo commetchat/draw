@@ -62,9 +62,9 @@ fn setup_callbacks() {
     let document = window.document().expect("window should have a document");
 
     let boxed: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
-        if (e.pointer_type() != "pen") {
-            return;
-        }
+        // if e.pointer_type() != "pen" {
+        //     return;
+        // }
 
         let window = web_sys::window().expect("should have a window in this context");
         let document = window.document().expect("window should have a document");

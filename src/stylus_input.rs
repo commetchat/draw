@@ -6,12 +6,13 @@ use bevy::{
 
 pub struct StylusInput;
 
+#[derive(Debug)]
 pub struct PointerData {
     pub pressure: f32,
     pub position: Vec2,
 }
 
-#[derive(Event)]
+#[derive(Event, Debug)]
 pub enum StylusEvent {
     PointerMove(PointerData),
 }

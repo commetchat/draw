@@ -3,14 +3,14 @@ import { createSignal, For, type Component } from 'solid-js';
 import logo from './logo.svg';
 import styles from './App.module.css';
 
-import * as game from './bevy/draw-bevy';
+import * as game from '../bevy/draw-bevy';
 
 import '@material/web/button/filled-button.js';
 
 import '@material/web/iconbutton/filled-icon-button';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
-import { WebDatabase } from './web_database';
+import { WebDatabase } from '../web_database';
 
 
 declare global {
@@ -52,7 +52,7 @@ const MultiplayerTest: Component = () => {
     }
 
     return (
-        <div class={styles.App}>
+        <div>
             <md-filled-button onclick={connect}>Connect</md-filled-button>
             <br></br>
             <For each={instances}>

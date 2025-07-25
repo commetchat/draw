@@ -25,7 +25,7 @@ use iyes_perf_ui::{
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[cfg(target_arch = "wasm32")]
+// #[cfg(target_arch = "wasm32")]
 use crate::web_input::WebInput;
 
 use crate::{
@@ -56,6 +56,7 @@ pub mod stylus_input;
 
 pub mod chunks;
 pub mod database;
+pub mod ui_messages;
 pub mod utils;
 pub mod web_input;
 
@@ -63,10 +64,11 @@ pub mod web_input;
 
 pub const BACKGROUND: Color = Color::srgb(0.1, 0.1, 0.1);
 
-const RENDER_LAYER_BATCH_STROKES: usize = 0;
-const RENDER_LAYER_RETAINED_IMAGE: usize = 1;
-const RENDER_LAYER_ACTIVE_STROKES: usize = 2;
-const RENDER_LAYER_HUD: usize = 3;
+const RENDER_LAYER_DEFAULT: usize = 0;
+const RENDER_LAYER_BATCH_STROKES: usize = 1;
+const RENDER_LAYER_RETAINED_IMAGE: usize = 2;
+const RENDER_LAYER_ACTIVE_STROKES: usize = 3;
+const RENDER_LAYER_HUD: usize = 4;
 
 fn main() {
     let mut app = App::new();
@@ -100,7 +102,7 @@ fn main() {
     .add_plugins(CameraControllerPlugin)
     .add_systems(Startup, setup);
 
-    #[cfg(target_arch = "wasm32")]
+    // #[cfg(target_arch = "wasm32")]
     app.add_plugins(WebInput);
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -142,6 +144,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         Camera2d,
         RenderLayers::from_layers(&[
+            RENDER_LAYER_DEFAULT,
             RENDER_LAYER_BATCH_STROKES,
             RENDER_LAYER_HUD,
             RENDER_LAYER_RETAINED_IMAGE,

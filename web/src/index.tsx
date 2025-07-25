@@ -2,11 +2,13 @@
 import { render } from 'solid-js/web';
 
 import './index.css';
-import App from './App';
+import App from './organisms/app';
 import { Route, Router } from '@solidjs/router';
-import MultiplayerTest from './Dev';
-import Root from './Root';
-import Embedded from './Embedded';
+import Root from './pages';
+import MultiplayerTest from './pages/dev';
+import Embedded from './pages/embedded';
+import UI from './organisms/ui';
+import DevUI from './pages/dev-ui';
 
 const root = document.getElementById('root');
 
@@ -19,5 +21,6 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 render(() => <Router>
   <Route path="/" component={Root} />
   <Route path="/dev" component={MultiplayerTest} />
+  <Route path="/dev-ui" component={DevUI} />
   <Route path="/embedded" component={Embedded} />
 </Router>, root!);

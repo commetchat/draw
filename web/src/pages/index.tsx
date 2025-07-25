@@ -6,7 +6,7 @@ import styles from './App.module.css';
 import '@material/web/iconbutton/filled-icon-button';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
-import App, { NetworkDelegate } from './App';
+import App, { NetworkDelegate } from '../organisms/app';
 
 let peerjs_delegate: NetworkDelegate = {
     send_to: function (message: Uint8Array, to: String): void {
