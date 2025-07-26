@@ -39,7 +39,7 @@ fn clamp_system(
     )>,
 ) {
     let mut new_transform = camera_query.0.transform;
-    new_transform.scale = new_transform.scale.clamp_length(0.01, 8.0);
+    new_transform.scale = new_transform.scale.clamp_length(0.001, 8.0);
 
     camera_query.0.transform = new_transform;
 }
