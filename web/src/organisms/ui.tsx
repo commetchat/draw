@@ -1,4 +1,4 @@
-import { createSignal, type Component } from 'solid-js';
+import { createEffect, createSignal, type Component } from 'solid-js';
 
 import './ui.css';
 
@@ -18,13 +18,26 @@ interface UIProps {
 
 
 const UI: Component<UIProps> = (props) => {
-    const [color, setColor] = createSignal("#aabbcc")
+    const [paintColor, setPaintColor] = createSignal<[number, number, number]>([1.0, 0, 0])
+    const [paintbrushWidth, setPaintbrushWidth] = createSignal(10.0);
+
+    console.log("Test!");
 
     function postUiMessage(message: UIMessage) {
         if (props.callback != null) {
             props.callback!(message);
         }
     };
+
+    createEffect(() => {
+        console.log("Sending ui message!");
+        postUiMessage({
+            type: "SetTool",
+            tool: "Paintbrush",
+            width: paintbrushWidth(),
+            color: paintColor()
+        })
+    });
 
     return (
         <div class='pointer-events-none' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
@@ -36,8 +49,8 @@ const UI: Component<UIProps> = (props) => {
 
             <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay' style={"filter: drop-shadow(0px 0px 1px gray);"} >
                 <div style={"margin: 10px; "}>
-                    <md-slider onchange={() => postUiMessage({ type: "SetTool", tool: "Paintbrush", width: 10, color: [0, 1, 0] })} ></md-slider>
-                    <ColorPicker></ColorPicker>
+                    <md-slider oninput={(e) => setPaintbrushWidth((e.target as any).value)} value={paintbrushWidth()} ></md-slider>
+                    <ColorPicker onchanged={setPaintColor}></ColorPicker>
                 </div>
             </div>
         </div >

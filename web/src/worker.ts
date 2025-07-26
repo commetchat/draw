@@ -8,12 +8,7 @@ let db: IDBDatabase | null
 self.onmessage = function (e) {
     if (e.data.type == "init_db") {
         let id = e.data.data;
-        console.log = (e) => {
-            postMessage({
-                type: "log",
-                data: e,
-            })
-        }
+
         initDb(id);
     }
 

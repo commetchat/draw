@@ -15,6 +15,8 @@ pub struct PointerData {
 #[derive(Event, Debug)]
 pub enum StylusEvent {
     PointerMove(PointerData),
+    PointerDown(PointerData),
+    PointerUp(PointerData),
 }
 
 impl Plugin for StylusInput {

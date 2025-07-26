@@ -13,6 +13,7 @@ use bevy::{
         view::RenderLayers,
     },
     sprite::{Material2d, Material2dPlugin},
+    ui::UiPlugin,
     window::WindowResolution,
 };
 use bevy_embedded_assets::EmbeddedAssetPlugin;
@@ -25,15 +26,15 @@ use iyes_perf_ui::{
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
-// #[cfg(target_arch = "wasm32")]
+#[cfg(target_arch = "wasm32")]
 use crate::web_input::WebInput;
 
 use crate::{
+    active_strokes::active_strokes_plugin::ActiveStrokesPlugin,
     camera_controller::{CameraControllerPlugin, TouchCameraController},
     chunks::{ChunkController, ChunksPlugin},
     database::{Database, web_database::init_web_database},
     lerp_transform::{LerpTransformPlugin, TargetTransform},
-    line_builder::{LineBuilder, LineCapMode, LineJointMode},
     retained_view::{
         RetainedViewPlugin, camera_change_detection::CameraChangeDetector,
         copy_camera::TargetCamera,
@@ -41,6 +42,8 @@ use crate::{
     stroke::Strokes,
     stylus_drawer::StylusDrawer,
     stylus_input::StylusInput,
+    tools::tools_plugin::ToolsPlugin,
+    ui::ui_plugin::AppUIPlugin,
 };
 
 pub mod camera_controller;
@@ -54,9 +57,12 @@ pub mod stroke;
 pub mod stylus_drawer;
 pub mod stylus_input;
 
+pub mod active_strokes;
 pub mod chunks;
 pub mod database;
-pub mod ui_messages;
+pub mod mesh_conversion;
+pub mod tools;
+pub mod ui;
 pub mod utils;
 pub mod web_input;
 
@@ -95,14 +101,17 @@ fn main() {
     .add_plugins(ChunksPlugin)
     .add_plugins(Strokes)
     .add_plugins(StylusInput)
-    .add_plugins(StylusDrawer)
+    // .add_plugins(StylusDrawer)
+    .add_plugins(ToolsPlugin)
+    .add_plugins(ActiveStrokesPlugin)
+    .add_plugins(AppUIPlugin)
     .add_plugins(Database)
     .add_plugins(RetainedViewPlugin)
     .add_plugins(LerpTransformPlugin)
     .add_plugins(CameraControllerPlugin)
     .add_systems(Startup, setup);
 
-    // #[cfg(target_arch = "wasm32")]
+    #[cfg(target_arch = "wasm32")]
     app.add_plugins(WebInput);
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -147,6 +156,7 @@ fn setup(mut commands: Commands) {
             RENDER_LAYER_DEFAULT,
             RENDER_LAYER_BATCH_STROKES,
             RENDER_LAYER_HUD,
+            RENDER_LAYER_ACTIVE_STROKES,
             RENDER_LAYER_RETAINED_IMAGE,
         ]),
         TargetCamera {},

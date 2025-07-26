@@ -14,6 +14,7 @@ use crate::{
     BACKGROUND,
     database::{web_database::set_initial_chunk_state, web_stroke_data::JsStrokeData},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
+    mesh_conversion::timestamp_to_z_offset,
     stroke::{Stroke, StrokeData, StrokeMetadata},
 };
 
@@ -91,12 +92,6 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
 
                 let start_index = u32::try_from(vertices.len()).unwrap();
 
-                builder.end_cap_mode = LineCapMode::Round;
-                builder.begin_cap_mode = LineCapMode::Round;
-                builder.joint_mode = LineJointMode::Round;
-
-                builder.width = 1.0;
-
                 builder.width = data.width;
                 builder.default_color = match data.stroke_type {
                     crate::stroke::StrokeType::Paint(color) => color,
@@ -108,10 +103,7 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
                     None => Vec::new(),
                 };
 
-                let mut z_offset = timestamp;
-
-                z_offset -= 1740000000.0;
-                z_offset *= 0.00000001;
+                let z_offset = timestamp_to_z_offset(timestamp);
 
                 builder.build();
                 vertices.reserve(builder.vertices.len());

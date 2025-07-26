@@ -5,6 +5,7 @@ use std::f32::consts::PI;
 
 use bevy::{
     color::Color,
+    log::info,
     math::{
         FloatExt, Rect, Vec2,
         ops::{abs, atan2},
@@ -77,9 +78,30 @@ impl LineBuilder {
             points: Vec::new(),
             width: 10.0,
             texture_mode: LineTextureMode::None,
-            begin_cap_mode: LineCapMode::None,
-            end_cap_mode: LineCapMode::None,
-            joint_mode: LineJointMode::Sharp,
+            begin_cap_mode: LineCapMode::Round,
+            end_cap_mode: LineCapMode::Round,
+            joint_mode: LineJointMode::Round,
+            closed: false,
+            default_color: Color::linear_rgb(1.0, 1.0, 1.0),
+            _round_precision: 8,
+            _last_index: [0, 0],
+            vertices: Vec::new(),
+            colors: Vec::new(),
+            uvs: Vec::new(),
+            indices: Vec::new(),
+            interpolate_color: false,
+        }
+    }
+
+    pub fn new_with(points: Vec<Vec2>, pressures: Vec<f32>) -> LineBuilder {
+        LineBuilder {
+            pressures: pressures,
+            points: points,
+            width: 10.0,
+            texture_mode: LineTextureMode::None,
+            begin_cap_mode: LineCapMode::Round,
+            end_cap_mode: LineCapMode::Round,
+            joint_mode: LineJointMode::Round,
             closed: false,
             default_color: Color::linear_rgb(1.0, 1.0, 1.0),
             _round_precision: 8,
@@ -152,7 +174,7 @@ impl LineBuilder {
                     .points
                     .get(i)
                     .unwrap()
-                    .distance(*self.points.get(i).unwrap());
+                    .distance(*self.points.get(i - 1).unwrap());
             }
 
             if wrap_around {

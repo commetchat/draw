@@ -61,42 +61,120 @@ fn setup_callbacks() {
     let window = web_sys::window().expect("should have a window in this context");
     let document = window.document().expect("window should have a document");
 
-    let boxed: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
-        // if e.pointer_type() != "pen" {
-        //     return;
-        // }
+    let pointer_move_callback: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
+        if e.pointer_type() == "touch" {
+            return;
+        }
 
-        let window = web_sys::window().expect("should have a window in this context");
-        let document = window.document().expect("window should have a document");
+        let mut pressure = e.pressure();
 
-        let binding = document
-            .get_element_by_id("bevy-portal")
-            .expect("should have #bevy-portal on the page");
+        if e.pointer_type() == "mouse" {
+            pressure = 1.0;
+        }
 
-        let canvas = binding
-            .dyn_ref::<HtmlElement>()
-            .expect("#bevy-portal be an `HtmlElement`");
-
-        let rect = canvas.get_bounding_client_rect();
+        let rect = get_canvas_rect();
 
         let mut a = ARRAY.lock().unwrap();
 
         a.push_back(StylusEvent::PointerMove(PointerData {
-            pressure: e.pressure(),
+            pressure: pressure,
             position: Vec2 {
                 x: (e.client_x() as f64 - rect.left()) as f32,
                 y: (e.client_y() as f64 - rect.top()) as f32,
             },
         }));
     });
-    let closure = Closure::wrap(boxed);
 
-    document
+    let pointer_down_callback: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
+        if e.pointer_type() == "touch" {
+            return;
+        }
+
+        let mut pressure = e.pressure();
+
+        if e.pointer_type() == "mouse" {
+            info!("Mouse button: {}", e.button());
+            if e.button() != 0 {
+                return;
+            }
+
+            pressure = 1.0;
+        }
+
+        let rect = get_canvas_rect();
+
+        let mut a = ARRAY.lock().unwrap();
+
+        a.push_back(StylusEvent::PointerDown(PointerData {
+            pressure: pressure,
+            position: Vec2 {
+                x: (e.client_x() as f64 - rect.left()) as f32,
+                y: (e.client_y() as f64 - rect.top()) as f32,
+            },
+        }));
+    });
+
+    let pointer_up_callback: Box<dyn FnMut(PointerEvent)> = Box::new(move |e| {
+        if e.pointer_type() == "touch" {
+            return;
+        }
+
+        let mut pressure = e.pressure();
+
+        if e.pointer_type() == "mouse" {
+            if e.button() != 0 {
+                return;
+            }
+
+            pressure = 0.0;
+        }
+
+        let rect = get_canvas_rect();
+
+        let mut a = ARRAY.lock().unwrap();
+
+        a.push_back(StylusEvent::PointerUp(PointerData {
+            pressure: pressure,
+            position: Vec2 {
+                x: (e.client_x() as f64 - rect.left()) as f32,
+                y: (e.client_y() as f64 - rect.top()) as f32,
+            },
+        }));
+    });
+
+    let pointer_move_closure = Closure::wrap(pointer_move_callback);
+    let pointer_down_closure = Closure::wrap(pointer_down_callback);
+    let pointer_up_closure = Closure::wrap(pointer_up_callback);
+
+    let canvas = document
         .get_element_by_id("bevy-portal")
-        .expect("should have #bevy-portal on the page")
-        .dyn_ref::<HtmlElement>()
-        .expect("#bevy-portal be an `HtmlElement`")
-        .set_onpointermove(Some(closure.as_ref().unchecked_ref()));
+        .expect("should have #bevy-portal on the page");
 
-    closure.forget();
+    let canvas = canvas
+        .dyn_ref::<HtmlElement>()
+        .expect("#bevy-portal be an `HtmlElement`");
+
+    canvas.set_onpointermove(Some(pointer_move_closure.as_ref().unchecked_ref()));
+    canvas.set_onpointerdown(Some(pointer_down_closure.as_ref().unchecked_ref()));
+    canvas.set_onpointerup(Some(pointer_up_closure.as_ref().unchecked_ref()));
+
+    pointer_move_closure.forget();
+    pointer_down_closure.forget();
+    pointer_up_closure.forget();
+}
+
+fn get_canvas_rect() -> web_sys::DomRect {
+    let window = web_sys::window().expect("should have a window in this context");
+    let document = window.document().expect("window should have a document");
+
+    let binding = document
+        .get_element_by_id("bevy-portal")
+        .expect("should have #bevy-portal on the page");
+
+    let canvas = binding
+        .dyn_ref::<HtmlElement>()
+        .expect("#bevy-portal be an `HtmlElement`");
+
+    let rect = canvas.get_bounding_client_rect();
+    rect
 }

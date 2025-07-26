@@ -31,6 +31,8 @@ fn show_gizmo(
                     gizmos.circle_2d(world_pos, 10.0 + pointer_data.pressure * 50.0, RED);
                 }
             }
+            StylusEvent::PointerDown(pointer_data) => (),
+            StylusEvent::PointerUp(pointer_data) => (),
         }
     }
 }

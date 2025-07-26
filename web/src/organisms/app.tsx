@@ -14,12 +14,26 @@ import UI from './ui';
 import { UIMessage } from '../bindings/ui_binding';
 
 
+class GameUtils {
+  get_system_time(): number {
+    let time = new Date().getTime();
+    return time / 1000;
+  };
+
+  get_random_u32(): number {
+    let u32_max = 4_294_967_294
+    let r = Math.random() * u32_max
+    return Math.round(r);
+  }
+}
+
 declare global {
-  interface Window { gameDatabase: WebDatabase; }
+  interface Window { gameDatabase: WebDatabase; gameUtils: GameUtils }
 }
 
 async function initGame(instance_id: string) {
   window.gameDatabase = new WebDatabase(instance_id)
+  window.gameUtils = new GameUtils()
 
   game.default();
 }
@@ -78,18 +92,9 @@ const App: Component<AppProps> = (props) => {
   let [getLines, setLines] = createSignal<string>("")
   let original = console.log;
 
-  console.log = (e) => {
-    original(e);
-
-    let s = getLines();
-    setLines((`${e}\n` + s).substring(0, 2000));
-  }
-
   const save_to_file = () => {
     window.gameDatabase.save_to_file()
   }
-
-
 
   function handleUIMessage(message: UIMessage): void {
 
@@ -105,6 +110,12 @@ const App: Component<AppProps> = (props) => {
 
     let msg = JSON.stringify(message);
     console.log("Passing UI Message to Game: " + msg,);
+
+    try {
+      game.queue_ui_message(msg);
+    } catch (_) {
+      console.log("Failed to pass message to game!");
+    }
   }
 
   return (
@@ -113,13 +124,6 @@ const App: Component<AppProps> = (props) => {
       <header>
         <div style={"width: 100vw; height: 100vh;  overflow: hidden;"}>
           <canvas style={"z-index: 1; position: relative;"} id="bevy-portal"></canvas>
-        </div>
-
-        <div class='pointer-events-none text-white text-xs ' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
-          <div style={"position: absolute; right: 0; top: 0;"}>
-            <textarea class='pointer-events-auto' style={"width: 75vw; height: 20vh; "} value={getLines()} disabled>
-            </textarea>
-          </div>
         </div>
 
 

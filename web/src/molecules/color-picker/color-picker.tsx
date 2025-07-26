@@ -29,7 +29,12 @@ function rgb2hex(numbers: number[]): string {
     return result;
 }
 
-const ColorPicker: Component = () => {
+interface ColorPickerProps {
+    onchanged: ((color: number[]) => void) | null;
+}
+
+
+const ColorPicker: Component<ColorPickerProps> = (props) => {
     const [color, setColor] = createSignal("#aabbcc")
 
     const [h, setHue] = createSignal(360)
@@ -42,6 +47,32 @@ const ColorPicker: Component = () => {
     const satColor = () => rgb2hex(hsl2rgb(h(), s(), 0.5));
     const finalColor = () => rgb2hex(hsl2rgb(h(), s(), l()));
 
+
+
+
+    const hueEvent = (e: Event) => {
+        setHue((e as any).target.value)
+        reportChange()
+    };
+
+    const satEvent = (e: Event) => {
+        setSaturation((e as any).target.value)
+        reportChange()
+    };
+
+    const lgtEvent = (e: Event) => {
+        setLightness((e as any).target.value)
+        reportChange()
+    };
+
+    const reportChange = () => {
+        let color = hsl2rgb(h(), s(), l());
+        if (props.onchanged != null) {
+            props.onchanged(color);
+        }
+    }
+
+
     return (
         <div class='flex w-[500px] items-center justify-center' style={`--md-sys-color-primary: ${finalColor()};`}>
             <div>
@@ -53,13 +84,13 @@ const ColorPicker: Component = () => {
             <div class='flex-1'>
                 <div class='hue-picker'>
 
-                    <md-slider value={h()} max={360} min={0} oninput={(v) => setHue((v as any).target.value)} onchange={(v) => setHue((v as any).target.value)}></md-slider>
+                    <md-slider value={h()} max={360} min={0} oninput={hueEvent} onchange={(v) => { hueEvent(v); reportChange() }}></md-slider>
                 </div>
                 <div class='hue-picker ml-2' style={`--md-slider-inactive-track-color: linear-gradient(90deg, hsl(${h()}, 0%, ${l() * 100}%), hsl(${h()}, 50%, ${l() * 100}%), hsl(${h()}, 100%, ${l() * 100}%));`}>
-                    <md-slider value={s()} min={0} max={1.0} step={0.01} oninput={(v) => setSaturation((v as any).target.value)} onchange={(v) => setSaturation((v as any).target.value)} ></md-slider>
+                    <md-slider value={s()} min={0} max={1.0} step={0.01} oninput={satEvent} onchange={(v) => { satEvent(v); reportChange() }} ></md-slider>
                 </div>
                 <div class='hue-picker' style={`--md-slider-inactive-track-color: linear-gradient(90deg, hsl(${h()}, ${s() * 100}%, 0%), hsl(${h()}, ${s() * 100}%, 50%), hsl(${h()}, ${s() * 100}%, 100%));`}>
-                    <md-slider value={l()} ticks min={0} max={1.0} step={0.1} oninput={(v) => setLightness((v as any).target.value)} onchange={(v) => setLightness((v as any).target.value)}  ></md-slider>
+                    <md-slider value={l()} ticks min={0} max={1.0} step={0.1} oninput={lgtEvent} onchange={(v) => { lgtEvent(v); reportChange() }}  ></md-slider>
                 </div>
             </div>
         </div >
