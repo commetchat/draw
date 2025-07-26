@@ -5,7 +5,7 @@ use rand::RngCore;
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
-pub const DEBUG_DRAW: bool = true;
+pub const DEBUG_DRAW: bool = false;
 
 #[wasm_bindgen]
 extern "C" {
