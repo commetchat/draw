@@ -46,7 +46,7 @@ pub fn handle_render_events_system(
             }
             RetainedViewEvent::UpdateContinuous => retained_camera.frames_until_disabled = i32::MAX,
             RetainedViewEvent::RetainFrame => {
-                retained_camera.frames_until_disabled = 1;
+                retained_camera.frames_until_disabled = 5;
             }
         }
     }

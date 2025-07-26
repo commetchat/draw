@@ -64,6 +64,7 @@ pub fn spawn_strokes_system(
                     color: new_point_data.color,
                     width: new_point_data.width,
                     points: Vec::new(),
+                    is_submitted_to_database: false,
                     pressures: Vec::new(),
                 };
 

@@ -22,7 +22,7 @@ use iyes_perf_ui::{
     entries::{
         PerfUiFixedTimeEntries, PerfUiFramerateEntries, PerfUiSystemEntries, PerfUiWindowEntries,
     },
-    prelude::{PerfUiDefaultEntries, PerfUiEntryFPS, PerfUiEntryFrameTime},
+    prelude::{PerfUiDefaultEntries, PerfUiEntryEntityCount, PerfUiEntryFPS, PerfUiEntryFrameTime},
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -168,6 +168,7 @@ fn setup(mut commands: Commands) {
 
     commands.spawn((
         PerfUiFramerateEntries::default(),
+        PerfUiEntryEntityCount::default(),
         RenderLayers::layer(RENDER_LAYER_HUD),
     ));
 }

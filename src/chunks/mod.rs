@@ -5,7 +5,9 @@ use bevy::{
 };
 
 use crate::{
-    chunks::chunk::{chunk_draw_system, chunk_spawn_system, update_chunk_system},
+    chunks::chunk::{
+        append_stroke_system, chunk_draw_system, chunk_spawn_system, update_chunk_system,
+    },
     utils::DEBUG_DRAW,
 };
 
@@ -32,6 +34,7 @@ impl Plugin for ChunksPlugin {
         app.add_systems(Update, chunk_spawn_system);
         app.add_systems(Update, update_chunk_system);
         app.add_systems(Update, chunk_draw_system);
+        app.add_systems(Update, append_stroke_system);
         app.add_systems(
             PostUpdate,
             show_chunks.after(TransformSystem::TransformPropagate),
@@ -66,7 +69,11 @@ fn show_chunks(
 
     let size = window.physical_size();
 
-    let padding = -Vec2::new(800.0, 800.0);
+    let mut padding = -Vec2::new(300.0, 300.0);
+
+    if DEBUG_DRAW {
+        padding *= -1.0;
+    }
 
     let corner = Vec2 {
         x: size.x as f32,

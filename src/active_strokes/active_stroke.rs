@@ -13,6 +13,7 @@ pub struct ActiveStroke {
     pub width: f32,
     pub points: Vec<Vec2>,
     pub pressures: Vec<f32>,
+    pub is_submitted_to_database: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -37,4 +38,5 @@ pub struct StrokeFinishedData {
 pub enum ActiveStrokeEvent {
     NewPoint(NewPointData),
     StrokeFinished(StrokeFinishedData),
+    DeleteActiveStroke(StrokeFinishedData),
 }

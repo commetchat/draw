@@ -28,5 +28,17 @@ fn lerp(mut query: Query<(&mut Transform, &TargetTransform)>, time: Res<Time>) {
             .lerp(target.transform.rotation, lerp_amount);
 
         transform.scale = transform.scale.lerp(target.transform.scale, lerp_amount);
+
+        if transform.translation.distance(target.transform.translation) < 0.001 {
+            transform.translation = target.transform.translation;
+        }
+
+        if transform.rotation.angle_between(target.transform.rotation) < 0.01 {
+            transform.rotation = target.transform.rotation;
+        }
+
+        if transform.scale.distance(target.transform.scale) < 0.0001 {
+            transform.scale = target.transform.scale;
+        }
     }
 }

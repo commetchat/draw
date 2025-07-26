@@ -27,21 +27,11 @@ export class WebDatabase {
 
 
     store_multiple_strokes(items: [game.StrokeData]) {
+        console.log("Storing multiple strokes: ")
+        console.log(items);
 
         let converted_items = items.map((a) => {
-            return {
-                id: a.id,
-                id_random: a.id_random,
-                timestamp: a.timestamp,
-                owner_id: a.owner_id,
-                chunk_key: a.chunk_key,
-                origin_x: a.origin_x,
-                origin_y: a.origin_y,
-                stroke_data: a.stroke_data,
-                vertex_data: a.vertex_data,
-                index_data: a.index_data,
-                color_data: a.color_data,
-            }
+            return this.convertStrokeDataToJs(a)
         })
 
         this.worker.postMessage({
@@ -52,19 +42,7 @@ export class WebDatabase {
 
     set_initial_chunk_state(chunk_key: string, vertex_data: Uint8Array, index_data: Uint32Array, color_data: Uint8Array, strokes: [game.StrokeData]) {
         let converted_strokes = strokes.map((a) => {
-            return {
-                id: a.id,
-                id_random: a.id_random,
-                timestamp: a.timestamp,
-                owner_id: a.owner_id,
-                chunk_key: a.chunk_key,
-                origin_x: a.origin_x,
-                origin_y: a.origin_y,
-                stroke_data: a.stroke_data,
-                vertex_data: a.vertex_data,
-                index_data: a.index_data,
-                color_data: a.color_data,
-            }
+            return this.convertStrokeDataToJs(a)
         })
 
         this.worker.postMessage({
@@ -77,6 +55,28 @@ export class WebDatabase {
                 strokes: converted_strokes,
             }
         }, [vertex_data.buffer, index_data.buffer, color_data.buffer])
+    }
+
+    private convertStrokeDataToJs(a: game.StrokeData): any {
+        let result = {
+            id: a.id,
+            id_random: a.id_random,
+            timestamp: a.timestamp,
+            owner_id: a.owner_id,
+            chunk_key: a.chunk_key,
+            origin_x: a.origin_x,
+            origin_y: a.origin_y,
+            vertex_offset: a.vertex_offset,
+            num_verts: a.num_verts,
+            stroke_data: a.stroke_data,
+            vertex_data: a.vertex_data,
+            index_data: a.index_data,
+            color_data: a.color_data,
+        };
+
+        a.free()
+
+        return result;
     }
 
     load_mesh_for_chunk(id: string) {
@@ -114,6 +114,10 @@ function handleMessage(message: MessageEvent<any>) {
     if (message.data.type == "do_full_chunk_reload") {
         game.db_chunk_needs_reloading(message.data.data.chunk_key);
     }
+
+    if (message.data.type == "append_mesh_data") {
+        append_mesh_data(message.data.data);
+    }
 }
 
 function handle_mesh_loaded(data: any) {
@@ -132,5 +136,29 @@ function handle_database_ready() {
 
 function prompt_save_file(data: any) {
     downloadBlob(new Uint8Array(data.data), data.name, data.mime);
+}
+
+function append_mesh_data(data: game.StrokeData[]) {
+    let converted = data.map((s) => {
+        return new game.StrokeData(
+            s.id,
+            s.id_random,
+            s.chunk_key,
+            s.timestamp,
+            s.origin_x,
+            s.origin_y,
+            s.owner_id,
+            s.stroke_data,
+            s.vertex_offset,
+            s.num_verts,
+            s.vertex_data,
+            s.index_data,
+            s.color_data
+        )
+    });
+
+
+
+    game.db_append_mesh_data(converted);
 }
 

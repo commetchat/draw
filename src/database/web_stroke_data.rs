@@ -8,6 +8,7 @@ use crate::{
 };
 
 #[wasm_bindgen(getter_with_clone, js_name = "StrokeData")]
+#[derive(Clone)]
 pub struct JsStrokeData {
     pub id: String,
     pub id_random: u32,
@@ -16,6 +17,8 @@ pub struct JsStrokeData {
     pub origin_x: f32,
     pub origin_y: f32,
     pub owner_id: Option<String>,
+    pub vertex_offset: Option<u32>,
+    pub num_verts: Option<u32>,
     pub stroke_data: Vec<u8>,
     pub vertex_data: Option<Vec<u8>>,
     pub index_data: Option<Vec<u32>>,
@@ -60,6 +63,8 @@ impl JsStrokeData {
         origin_y: f32,
         owner_id: Option<String>,
         stroke_data: Vec<u8>,
+        vertex_offset: Option<u32>,
+        num_verts: Option<u32>,
         vertex_data: Option<Vec<u8>>,
         index_data: Option<Vec<u32>>,
         color_data: Option<Vec<u8>>,
@@ -72,6 +77,8 @@ impl JsStrokeData {
             origin_y: origin_y,
             timestamp: timestamp,
             owner_id: owner_id,
+            vertex_offset: vertex_offset,
+            num_verts: num_verts,
             stroke_data: stroke_data,
             vertex_data: vertex_data,
             index_data: index_data,
@@ -95,6 +102,11 @@ impl JsStrokeData {
             None => (None, None, None),
         };
 
+        let num_verts = match &stroke.mesh {
+            Some(mesh) => Some(u32::try_from(mesh.vertices.len()).unwrap()),
+            None => None,
+        };
+
         return JsStrokeData {
             id: stroke.metadata.get_id(),
             id_random: stroke.metadata.id_random,
@@ -104,6 +116,8 @@ impl JsStrokeData {
             origin_y: stroke.metadata.origin.y,
             owner_id: stroke.metadata.owner.clone(),
             stroke_data: binary_data,
+            num_verts: num_verts,
+            vertex_offset: None,
             vertex_data: mesh_data.0,
             index_data: mesh_data.1,
             color_data: mesh_data.2,

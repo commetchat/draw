@@ -35,10 +35,11 @@ pub fn camera_change_detection_system(
     let scale_changed = scale_diff > 0.00001;
 
     let angle_diff = camera_query.0.last_rotation.angle_between(camera_rotation);
-    let angle_changed = angle_diff > 0.005;
+    let angle_changed = camera_rotation != camera_query.0.last_rotation && angle_diff > 0.0001;
 
     if (pos_changed) {
         info!("Position changed by: {}", pos_diff);
+        info!("{} vs {}", camera_query.0.last_position, camera_pos);
     }
 
     if (scale_changed) {

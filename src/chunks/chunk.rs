@@ -12,10 +12,11 @@ use bevy::{
 
 use crate::{
     CustomMaterial, RENDER_LAYER_BATCH_STROKES,
+    active_strokes::active_stroke::{ActiveStrokeEvent, StrokeFinishedData},
     chunks::{CHUNK_SIZE, ChunkEvent},
     database::{
-        CHUNKS_NEED_RELOADING, DATABASE_READY, LOAD_MESH_QUEUE, web_database::load_mesh_for_chunk,
-        web_stroke_data::JsMeshData,
+        APPEND_STROKE_DATAS, CHUNKS_NEED_RELOADING, DATABASE_READY, LOAD_MESH_QUEUE,
+        web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData,
     },
     retained_view::copy_camera::RetainedViewEvent,
     stroke::{self, Stroke, StrokeMesh},
@@ -82,16 +83,12 @@ pub fn chunk_spawn_system(
                     bevy::render::mesh::PrimitiveTopology::TriangleList,
                     RenderAssetUsages::all(),
                 );
-                let verts: Vec<[f32; 3]> = vec![[0.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 5.0, 5.0]];
-                let colors: Vec<[f32; 4]> = vec![
-                    [0.0, 0.0, 0.0, 0.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                    [0.0, 0.0, 0.0, 0.0],
-                ];
+                let verts: Vec<[f32; 3]> = vec![[0.0, 0.0, 0.0]];
+                let colors: Vec<[f32; 4]> = vec![[0.0, 0.0, 0.0, 0.0]];
 
                 mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts);
                 mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-                mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
+                mesh.insert_indices(Indices::U32(vec![0, 0, 0]));
 
                 let handle = meshes.add(mesh);
                 info!("Spawning chunk: {}  {}", id, handle.id());
@@ -120,6 +117,125 @@ pub fn chunk_spawn_system(
                 }
             }
         }
+    }
+}
+
+pub fn append_stroke_system(
+    mut chunks: Query<(&mut Chunk, &mut Mesh2d)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut stroke_events: EventWriter<ActiveStrokeEvent>,
+    mut render_events: EventWriter<RetainedViewEvent>,
+) {
+    let ready = DATABASE_READY.lock().unwrap();
+    if *ready == false {
+        return;
+    }
+
+    let mut did_change_data = false;
+
+    let mut map = APPEND_STROKE_DATAS.lock().unwrap();
+
+    for mut chunk in chunks.iter_mut() {
+        let queue = map.get_mut(&chunk.0.chunk_id);
+
+        let queue = match queue {
+            Some(queue) => queue,
+            None => {
+                continue;
+            }
+        };
+
+        while let Some(item) = queue.pop_front() {
+            info!("Got new stroke data for chunk: {}", chunk.0.chunk_id);
+
+            let handle = &chunk.1;
+            let handle = &handle.0;
+
+            let mesh = match meshes.get_mut(handle.id()) {
+                Some(mesh) => mesh,
+                None => {
+                    info!("Failed to get mesh from handle! {}", handle.id());
+                    continue;
+                }
+            };
+
+            let mut verts = match (mesh.attribute(Mesh::ATTRIBUTE_POSITION)) {
+                Some(verts) => match (verts) {
+                    VertexAttributeValues::Float32x3(items) => items,
+                    _ => {
+                        continue;
+                    }
+                },
+                None => continue,
+            };
+
+            info!("Existing mesh verts count: {}", verts.len());
+            info!("Vertex offset: {:?}", item.vertex_offset);
+
+            let mut colors = match (mesh.attribute(Mesh::ATTRIBUTE_COLOR)) {
+                Some(verts) => match (verts) {
+                    VertexAttributeValues::Float32x4(items) => items,
+                    _ => {
+                        continue;
+                    }
+                },
+                None => continue,
+            };
+
+            let mut indices = match mesh.indices() {
+                Some(indices) => match indices {
+                    Indices::U32(items) => items,
+                    _ => {
+                        continue;
+                    }
+                },
+                None => {
+                    continue;
+                }
+            };
+
+            let mut verts = verts.clone();
+            let mut indices = indices.clone();
+            let mut colors = colors.clone();
+
+            let mut stroke_mesh = StrokeMesh::from_bytes(
+                item.vertex_data.unwrap(),
+                item.index_data.unwrap(),
+                item.color_data.unwrap(),
+            );
+
+            if verts.len() == 1 && item.vertex_offset == Some(0) {
+                verts = stroke_mesh.vertices;
+                indices = stroke_mesh.indices;
+                colors = stroke_mesh.colors;
+            } else if verts.len() == usize::try_from(item.vertex_offset.unwrap()).unwrap() {
+                info!("Vertex count is as expected, appending data");
+                verts.append(&mut stroke_mesh.vertices);
+                colors.append(&mut stroke_mesh.colors);
+                indices.append(&mut stroke_mesh.indices);
+            }
+
+            mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts);
+            mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+            mesh.insert_indices(Indices::U32(indices));
+
+            stroke_events.write(ActiveStrokeEvent::DeleteActiveStroke(StrokeFinishedData {
+                timestamp: item.timestamp,
+                id_random: item.id_random,
+                stroke_origin: Vec2 {
+                    x: item.origin_x,
+                    y: item.origin_y,
+                },
+            }));
+
+            did_change_data = true;
+        }
+    }
+
+    map.clear();
+
+    if did_change_data {
+        render_events.write(RetainedViewEvent::UpdateFrame);
     }
 }
 

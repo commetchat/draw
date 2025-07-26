@@ -100,8 +100,18 @@ async function initDb(instance_id: string) {
 
 function store_multiple_strokes(items: [game.StrokeData]) {
     const tx = db?.transaction([strokes, mesh], "readwrite");
+
+
+    let meshes_to_append: game.StrokeData[] = [];
+
     tx!.oncomplete = () => {
         console.log("Transaction complete!")
+        console.log(meshes_to_append);
+
+        postMessage({
+            type: "append_mesh_data",
+            data: meshes_to_append,
+        })
     }
 
     tx!.onerror = (err) => {
@@ -133,20 +143,14 @@ function store_multiple_strokes(items: [game.StrokeData]) {
             mesh_map.set(mesh.chunk_key, mesh);
         });
 
+
         items.forEach((data) => {
 
             let mesh = mesh_map.get(data.chunk_key);
 
-            store?.add({
-                id: data.id,
-                id_random: data.id_random,
-                chunk_key: data.chunk_key,
-                owner_id: data.owner_id,
-                timestamp: data.timestamp,
-                origin_x: data.origin_x,
-                origin_y: data.origin_y,
-                stroke_data: data.stroke_data,
-            });
+            let vertex_offset = 0;
+
+            let merged_indices = data.index_data!;
 
             if (mesh == null) {
                 mesh = {
@@ -157,13 +161,14 @@ function store_multiple_strokes(items: [game.StrokeData]) {
                 };
             } else {
 
-                let num_points = mesh.vertices.length / (3 * 4);
+                vertex_offset = mesh.vertices.length / (3 * 4);
                 let arr = Uint32Array.from(data.index_data!);
 
                 for (let i = 0; i < arr.length; i++) {
-                    arr[i] = arr[i] + num_points;
-
+                    arr[i] = arr[i] + vertex_offset;
                 }
+
+                merged_indices = arr;
 
                 mesh = {
                     chunk_key: data.chunk_key,
@@ -173,12 +178,44 @@ function store_multiple_strokes(items: [game.StrokeData]) {
                 }
             }
 
+            let result = {
+                id: data.id,
+                id_random: data.id_random,
+                chunk_key: data.chunk_key,
+                owner_id: data.owner_id,
+                timestamp: data.timestamp,
+                origin_x: data.origin_x,
+                vertex_offset: vertex_offset,
+                num_verts: data.num_verts,
+                origin_y: data.origin_y,
+                stroke_data: data.stroke_data,
+            }
+
+
+            store?.add(result);
+
+            let return_result = {
+                vertex_data: data.vertex_data,
+                index_data: merged_indices,
+                color_data: data.color_data,
+                ...result
+            }
+
+            return_result.stroke_data = new Uint8Array();
+            meshes_to_append.push(return_result as game.StrokeData);
+
+
             mesh_map.set(data.chunk_key, mesh);
         })
 
         mesh_map.values().forEach((e) => meshes!.put(e));
 
         tx?.commit();
+
+
+        console.log("Stored strokes, returning merged mesh data:")
+        console.log((meshes_to_append as any))
+
     }
 
     mesh_data_request.onerror = (ev) => {

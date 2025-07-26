@@ -43,6 +43,9 @@ pub static LOAD_MESH_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<JsMeshData>>
 pub static CHUNKS_NEED_RELOADING: LazyLock<Mutex<Vec<String>>> =
     LazyLock::new(|| Mutex::new(Vec::new()));
 
+pub static APPEND_STROKE_DATAS: LazyLock<Mutex<HashMap<String, VecDeque<JsStrokeData>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
 pub static DATABASE_READY: Mutex<bool> = Mutex::new(false);
 
 impl Plugin for Database {
@@ -74,6 +77,23 @@ fn store_finished_strokes(mut events: EventReader<StrokeEvent>) {
 
     if !data.is_empty() {
         store_multiple_strokes(data);
+    }
+}
+
+#[wasm_bindgen]
+pub fn db_append_mesh_data(strokes: Vec<JsStrokeData>) {
+    info!("Received {} strokes to append from db", strokes.len());
+
+    let mut map = APPEND_STROKE_DATAS.lock().unwrap();
+
+    for stroke in strokes.iter() {
+        if map.contains_key(&stroke.chunk_key) == false {
+            map.insert(stroke.chunk_key.clone(), VecDeque::new());
+        }
+
+        let queue = map.get_mut(&stroke.chunk_key).unwrap();
+
+        queue.push_back(stroke.clone());
     }
 }
 

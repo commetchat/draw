@@ -76,7 +76,7 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
                 let data = StrokeData::parse(slice.to_vec());
                 let mut builder = LineBuilder::new();
 
-                let stroke_data = JsStrokeData::from_stroke(&Stroke {
+                let mut stroke_data = JsStrokeData::from_stroke(&Stroke {
                     data: data.clone(),
                     metadata: StrokeMetadata {
                         timestamp: timestamp,
@@ -109,8 +109,6 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
                 vertices.reserve(builder.vertices.len());
                 colors.reserve(builder.colors.len());
 
-                strokes.push(stroke_data);
-
                 for p in &builder.vertices {
                     vertices.push([p.x + origin_x, p.y + origin_y, 0.0]);
                     let mut color = builder.default_color.to_linear().to_f32_array(); // LinearRgba::from_u8_array_no_alpha().to_f32_array();
@@ -122,6 +120,11 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
                 for i in builder.indices {
                     indices.push(i + start_index);
                 }
+
+                stroke_data.vertex_offset = Some(start_index);
+                stroke_data.num_verts = Some(u32::try_from(vertices.len()).unwrap());
+
+                strokes.push(stroke_data);
             }
         }
 

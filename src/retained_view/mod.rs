@@ -118,7 +118,7 @@ fn setup(
             order: -1,
             target: handle.clone().into(),
             clear_color: if DEBUG_DRAW {
-                Color::linear_rgb(1.0, 0.0, 1.0).into()
+                Color::linear_rgb(0.2, 0.1, 0.2).into()
             } else {
                 BACKGROUND.into()
             },

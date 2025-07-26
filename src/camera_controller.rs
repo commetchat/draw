@@ -37,9 +37,15 @@ fn clamp_system(
         &Camera,
         &GlobalTransform,
     )>,
+    window: Single<&mut Window>,
 ) {
     let mut new_transform = camera_query.0.transform;
-    new_transform.scale = new_transform.scale.clamp_length(0.001, 8.0);
+
+    let window_scale = window.resolution.base_scale_factor();
+
+    new_transform.scale = new_transform
+        .scale
+        .clamp_length(0.001, 6.0 * (1.0 / window_scale));
 
     camera_query.0.transform = new_transform;
 }
