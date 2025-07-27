@@ -30,8 +30,8 @@ pub fn parse_packet_system(mut events: EventWriter<ReceivedPacket>) {
                     data: data,
                 });
             }
-            Err(_) => {
-                info!("Failed to parse packet");
+            Err(err) => {
+                info!("Failed to parse packet: {:?}", err);
                 continue;
             }
         }

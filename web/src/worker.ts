@@ -76,6 +76,7 @@ async function initDb(instance_id: string) {
             objectStore.createIndex("chunk_key", "chunk_key", { unique: false });
             objectStore.createIndex("owner_id", "owner_id", { unique: false });
             objectStore.createIndex("timestamp", "timestamp", { unique: false });
+            objectStore.createIndex("id_random", "id_random", { unique: false });
 
             var mesh_store = db.createObjectStore(mesh, {
                 keyPath: "chunk_key"
@@ -263,7 +264,7 @@ function send_stroke_index_to_user(userid: string, index: number, count: number)
 
 
 
-    var cursorRequest = store!.index('timestamp').openCursor(null, 'next');
+    var cursorRequest = store!.index('id_random').openCursor(null, 'next');
     let has_advanced = false;
 
     cursorRequest.onsuccess = function (e) {
@@ -307,7 +308,7 @@ function send_stroke_index_to_user(userid: string, index: number, count: number)
 
         setTimeout(() => {
             send_stroke_index_to_user(userid, index + 1, count);
-        }, 20)
+        }, 10)
     };
 
 }

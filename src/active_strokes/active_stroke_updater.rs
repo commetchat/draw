@@ -37,7 +37,6 @@ pub fn update_strokes_system(
     for event in events.read() {
         match event {
             ActiveStrokeEvent::NewPoint(new_point_data) => {
-                info!("Handling new points!");
                 for mut stroke in current_strokes.iter_mut() {
                     if stroke.1.timestamp == new_point_data.timestamp
                         && stroke.1.id_random == new_point_data.id_random

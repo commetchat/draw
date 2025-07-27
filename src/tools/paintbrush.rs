@@ -99,6 +99,7 @@ pub fn paintbrush_system(
                     stroke_origin: world_pos,
                     point: world_pos,
                     width: width,
+                    owner: None,
                     pressure: data.pressure,
                 };
 
@@ -141,6 +142,7 @@ pub fn paintbrush_system(
                         color: current.color,
                         point: world_pos,
                         width: current.width,
+                        owner: None,
                         pressure: data.pressure,
                     }));
                 }

@@ -33,7 +33,7 @@ use crate::{
     active_strokes::active_strokes_plugin::ActiveStrokesPlugin,
     camera_controller::{CameraControllerPlugin, TouchCameraController},
     chunks::{ChunkController, ChunksPlugin},
-    database::{Database, web_database::init_web_database},
+    database::Database,
     lerp_transform::{LerpTransformPlugin, TargetTransform},
     networking::networking_plugin::NetworkingPlugin,
     retained_view::{
@@ -76,7 +76,11 @@ const RENDER_LAYER_BATCH_STROKES: usize = 1;
 const RENDER_LAYER_RETAINED_IMAGE: usize = 2;
 const RENDER_LAYER_ACTIVE_STROKES: usize = 3;
 const RENDER_LAYER_HUD: usize = 4;
-
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = gameUtils, js_name=init)]
+    pub fn game_ready();
+}
 fn main() {
     let mut app = App::new();
 
@@ -124,7 +128,7 @@ fn main() {
 
     app.run();
 
-    init_web_database();
+    game_ready();
 }
 
 // Import the `window.alert` function from the Web.

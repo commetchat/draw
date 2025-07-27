@@ -25,6 +25,7 @@ pub struct NewPointData {
     pub point: Vec2,
     pub width: f32,
     pub pressure: f32,
+    pub owner: Option<String>,
 }
 
 #[derive(Debug)]

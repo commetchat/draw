@@ -9,21 +9,21 @@ use crate::{
     stroke::{Stroke, StrokeMesh},
 };
 
-pub fn store_received_strokes_system(mut events: EventReader<ReceivedPacket>) {
+pub fn handle_received_strokes_system(mut events: EventReader<ReceivedPacket>) {
     for event in events.read() {
         match &event.data {
             super::packet::PacketData::StrokeComplete(stroke) => {
                 let mut s = stroke.clone();
 
-                let (verts, colors, indices) = stroke_to_mesh(&s);
+                let (verts, colors, indices) = stroke_to_mesh(&s.data);
 
-                s.mesh = Some(StrokeMesh {
+                s.data.mesh = Some(StrokeMesh {
                     vertices: verts,
                     colors: colors,
                     indices: indices,
                 });
 
-                let mut data = JsStrokeData::from_stroke(&s);
+                let mut data = JsStrokeData::from_stroke(&s.data);
                 data.owner_id = Some(event.from.clone());
 
                 store_multiple_strokes(vec![data]);

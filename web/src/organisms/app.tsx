@@ -15,6 +15,18 @@ import { UIMessage } from '../bindings/ui_binding';
 
 
 class GameUtils {
+
+  constructor(delegate: NetworkDelegate) {
+    this.network_delegate = delegate;
+  }
+
+  network_delegate: NetworkDelegate
+
+  // Called when bevy side is ready
+  init() {
+    window.gameDatabase.init();
+  }
+
   get_system_time(): number {
     let time = new Date().getTime();
     return time / 1000;
@@ -25,6 +37,10 @@ class GameUtils {
     let r = Math.random() * u32_max
     return Math.round(r);
   }
+
+  web_send_packet(to: string, data: Uint8Array) {
+    this.network_delegate.send_to(data, to);
+  }
 }
 
 declare global {
@@ -33,7 +49,7 @@ declare global {
 
 async function initGame(instance_id: string, delegate: NetworkDelegate) {
   window.gameDatabase = new WebDatabase(instance_id, delegate)
-  window.gameUtils = new GameUtils()
+  window.gameUtils = new GameUtils(delegate)
 
   game.default();
 }
@@ -88,11 +104,13 @@ const App: Component<AppProps> = (props) => {
 
   props.delegate.on_peer_connected = (from) => {
     console.log("Peer connected! ", from)
+    game.web_peer_connected(from);
     window.gameDatabase.send_strokes_to_user(from);
+
   }
 
   props.delegate.on_peer_disconnected = (from) => {
-
+    game.web_peer_disconnected(from);
   }
 
   let [getLines, setLines] = createSignal<string>("")

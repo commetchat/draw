@@ -1,11 +1,12 @@
 use bevy::{
-    app::{Plugin, PostUpdate},
+    app::{Plugin, PostUpdate, Update},
     ecs::schedule::IntoScheduleConfigs,
 };
 
 use crate::networking::{
-    packet::ReceivedPacket, receive_packet::parse_packet_system,
-    store_received_strokes::store_received_strokes_system,
+    handle_new_point_packet::handle_new_point_system,
+    handle_received_strokes::handle_received_strokes_system, packet::ReceivedPacket,
+    receive_packet::parse_packet_system, send_active_strokes::send_active_strokes_system,
 };
 
 pub struct NetworkingPlugin;
@@ -15,7 +16,9 @@ impl Plugin for NetworkingPlugin {
         app.add_event::<ReceivedPacket>();
         app.add_systems(
             PostUpdate,
-            (parse_packet_system, store_received_strokes_system).chain(),
+            (parse_packet_system, handle_received_strokes_system).chain(),
         );
+        app.add_systems(Update, send_active_strokes_system);
+        app.add_systems(Update, handle_new_point_system);
     }
 }
