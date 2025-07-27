@@ -146,8 +146,6 @@ pub fn append_stroke_system(
         };
 
         while let Some(item) = queue.pop_front() {
-            info!("Got new stroke data for chunk: {}", chunk.0.chunk_id);
-
             let handle = &chunk.1;
             let handle = &handle.0;
 
@@ -168,9 +166,6 @@ pub fn append_stroke_system(
                 },
                 None => continue,
             };
-
-            info!("Existing mesh verts count: {}", verts.len());
-            info!("Vertex offset: {:?}", item.vertex_offset);
 
             let mut colors = match (mesh.attribute(Mesh::ATTRIBUTE_COLOR)) {
                 Some(verts) => match (verts) {
@@ -209,10 +204,16 @@ pub fn append_stroke_system(
                 indices = stroke_mesh.indices;
                 colors = stroke_mesh.colors;
             } else if verts.len() == usize::try_from(item.vertex_offset.unwrap()).unwrap() {
-                info!("Vertex count is as expected, appending data");
                 verts.append(&mut stroke_mesh.vertices);
                 colors.append(&mut stroke_mesh.colors);
                 indices.append(&mut stroke_mesh.indices);
+            } else {
+                info!("Unexpected vertex count in mesh! something is not right!");
+            }
+
+            if verts.len() == 0 {
+                info!("Number of verts is ZERO, somethings gone wrong!");
+                return;
             }
 
             mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts);

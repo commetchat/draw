@@ -35,6 +35,7 @@ use crate::{
     chunks::{ChunkController, ChunksPlugin},
     database::{Database, web_database::init_web_database},
     lerp_transform::{LerpTransformPlugin, TargetTransform},
+    networking::networking_plugin::NetworkingPlugin,
     retained_view::{
         RetainedViewPlugin, camera_change_detection::CameraChangeDetector,
         copy_camera::TargetCamera,
@@ -48,19 +49,19 @@ use crate::{
 
 pub mod camera_controller;
 
+pub mod active_strokes;
+pub mod chunks;
+pub mod database;
 pub mod file_reader;
 pub mod lerp_transform;
 pub mod line_builder;
 pub mod load_file;
+pub mod mesh_conversion;
+pub mod networking;
 pub mod retained_view;
 pub mod stroke;
 pub mod stylus_drawer;
 pub mod stylus_input;
-
-pub mod active_strokes;
-pub mod chunks;
-pub mod database;
-pub mod mesh_conversion;
 pub mod tools;
 pub mod ui;
 pub mod utils;
@@ -109,6 +110,7 @@ fn main() {
     .add_plugins(RetainedViewPlugin)
     .add_plugins(LerpTransformPlugin)
     .add_plugins(CameraControllerPlugin)
+    .add_plugins(NetworkingPlugin)
     .add_systems(Startup, setup);
 
     #[cfg(target_arch = "wasm32")]

@@ -34,7 +34,6 @@ pub fn handle_render_events_system(
     mut retained_camera: Single<&mut RetainedView>,
 ) {
     for event in render_events.read() {
-        info!("Received event: {:?}", event);
         match event {
             RetainedViewEvent::UpdateFrame => {
                 match retained_camera.frames_until_disabled.checked_add(2) {
@@ -57,7 +56,6 @@ pub fn render_loop(
     mut target_camera: Single<(&mut TargetCamera, &mut RenderLayers, &GlobalTransform)>,
 ) {
     if retained_camera.0.frames_until_disabled == 1 {
-        info!("Disabled batch viewlayer for main camera");
         *target_camera.1 = target_camera
             .1
             .clone()
@@ -65,11 +63,9 @@ pub fn render_loop(
             .with(RENDER_LAYER_RETAINED_IMAGE);
         retained_camera.1.is_active = true;
     } else if retained_camera.0.frames_until_disabled == 0 {
-        info!("Disabled retained camera");
         retained_camera.1.is_active = false;
     } else if retained_camera.0.frames_until_disabled > 0 {
         retained_camera.1.is_active = false;
-        info!("Enabled batch viewlayer for main camera");
         *target_camera.1 = target_camera
             .1
             .clone()

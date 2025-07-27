@@ -82,8 +82,6 @@ fn store_finished_strokes(mut events: EventReader<StrokeEvent>) {
 
 #[wasm_bindgen]
 pub fn db_append_mesh_data(strokes: Vec<JsStrokeData>) {
-    info!("Received {} strokes to append from db", strokes.len());
-
     let mut map = APPEND_STROKE_DATAS.lock().unwrap();
 
     for stroke in strokes.iter() {
@@ -99,8 +97,6 @@ pub fn db_append_mesh_data(strokes: Vec<JsStrokeData>) {
 
 #[wasm_bindgen]
 pub fn db_on_mesh_loaded(mesh: JsMeshData) {
-    info!("Received mesh from db");
-
     let mut map = LOAD_MESH_QUEUE.lock().unwrap();
 
     if map.contains_key(&mesh.chunk_key) == false {

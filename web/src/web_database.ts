@@ -1,21 +1,24 @@
 import * as game from './bevy/draw-bevy';
 import { MeshData } from './bevy/draw-bevy';
+import { NetworkDelegate } from './organisms/app';
 import { downloadBlob } from './utils/download';
 import Worker from './worker?worker';
 
 
 export class WebDatabase {
 
-    constructor(instance_id: string) {
+    constructor(instance_id: string, delegate: NetworkDelegate) {
         this.db = null;
         this.worker = new Worker()
         this.instance_id = instance_id;
-        this.worker.onmessage = handleMessage
+        this.worker.onmessage = this.handleMessage.bind(this);
+        this.network_delegate = delegate;
     }
 
     instance_id: string
     db: IDBDatabase | null
     worker: Worker
+    network_delegate: NetworkDelegate
 
 
     init() {
@@ -27,9 +30,6 @@ export class WebDatabase {
 
 
     store_multiple_strokes(items: [game.StrokeData]) {
-        console.log("Storing multiple strokes: ")
-        console.log(items);
-
         let converted_items = items.map((a) => {
             return this.convertStrokeDataToJs(a)
         })
@@ -55,6 +55,13 @@ export class WebDatabase {
                 strokes: converted_strokes,
             }
         }, [vertex_data.buffer, index_data.buffer, color_data.buffer])
+    }
+
+    send_strokes_to_user(identifier: String) {
+        this.worker.postMessage({
+            type: "send_strokes_to_user",
+            data: identifier,
+        })
     }
 
     private convertStrokeDataToJs(a: game.StrokeData): any {
@@ -92,36 +99,41 @@ export class WebDatabase {
         });
     }
 
-}
 
-function handleMessage(message: MessageEvent<any>) {
-    if (message.data.type == "loaded_mesh_for_chunk") {
-        handle_mesh_loaded(message.data.data);
-    }
+    handleMessage(message: MessageEvent<any>) {
+        if (message.data.type == "loaded_mesh_for_chunk") {
+            handle_mesh_loaded(message.data.data);
+        }
 
-    if (message.data.type == "db_init") {
-        handle_database_ready();
-    }
+        if (message.data.type == "db_init") {
+            handle_database_ready();
+        }
 
-    if (message.data.type == "log") {
-        console.log(message.data.data);
-    }
+        if (message.data.type == "log") {
+            console.log(message.data.data);
+        }
 
-    if (message.data.type == "prompt_save_file") {
-        prompt_save_file(message.data.data);
-    }
+        if (message.data.type == "prompt_save_file") {
+            prompt_save_file(message.data.data);
+        }
 
-    if (message.data.type == "do_full_chunk_reload") {
-        game.db_chunk_needs_reloading(message.data.data.chunk_key);
-    }
+        if (message.data.type == "do_full_chunk_reload") {
+            game.db_chunk_needs_reloading(message.data.data.chunk_key);
+        }
 
-    if (message.data.type == "append_mesh_data") {
-        append_mesh_data(message.data.data);
+        if (message.data.type == "append_mesh_data") {
+            append_mesh_data(message.data.data);
+        }
+
+        if (message.data.type == "send_to_user") {
+            let bytes = new Uint8Array(message.data.data.data); //LOL
+            let user = message.data.data.user as string;
+            this.network_delegate.send_to(bytes, user)
+        }
     }
 }
 
 function handle_mesh_loaded(data: any) {
-    console.log("Received mesh data from worker!");
     let verts = new Uint8Array(data.vertex_data);
     let indices = new Uint32Array(data.index_data);
     let colors = new Uint8Array(data.color_data);

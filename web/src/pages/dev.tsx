@@ -27,8 +27,26 @@ const MultiplayerTest: Component = () => {
 
 
     window.onmessage = (message) => {
-        console.log("Received message");
-        console.log(message);
+        let source = (message.source as any).frameElement.id
+        if (message.data.type == "send_to") {
+
+            instances.forEach((receiver) => {
+                if (receiver == source) {
+                    return;
+                }
+
+                let msg = {
+                    type: "recv_from",
+                    info: { "from": source },
+                    body: message.data.body
+                }
+
+                let receiver_frame = document.getElementById(receiver) as any
+                receiver_frame.contentWindow.postMessage(msg);
+
+            });
+        }
+
     }
 
     const connect = () => {
@@ -39,7 +57,7 @@ const MultiplayerTest: Component = () => {
                 let receiver_frame = document.getElementById(receiver) as any
                 let msg = {
                     "type": "peerconnect",
-                    "info": JSON.stringify({ "from": sender }),
+                    "info": { "from": sender },
                     "body": null
                 }
 
@@ -57,7 +75,7 @@ const MultiplayerTest: Component = () => {
             <br></br>
             <For each={instances}>
                 {
-                    (item) => <iframe id={item} width="1280" height="720" src={`/embedded?id=${item}`} />
+                    (item) => <iframe class="m-2" id={item} width="1280" height="720" src={`/embedded?id=${item}`} />
                 }
             </For>
         </div >

@@ -37,29 +37,27 @@ pub fn camera_change_detection_system(
     let angle_diff = camera_query.0.last_rotation.angle_between(camera_rotation);
     let angle_changed = camera_rotation != camera_query.0.last_rotation && angle_diff > 0.0001;
 
-    if (pos_changed) {
-        info!("Position changed by: {}", pos_diff);
-        info!("{} vs {}", camera_query.0.last_position, camera_pos);
-    }
+    // if (pos_changed) {
+    //     info!("Position changed by: {}", pos_diff);
+    //     info!("{} vs {}", camera_query.0.last_position, camera_pos);
+    // }
 
-    if (scale_changed) {
-        info!("Scale changed by: {}", scale_diff);
-    }
+    // if (scale_changed) {
+    //     info!("Scale changed by: {}", scale_diff);
+    // }
 
-    if (angle_changed) {
-        info!("Angle changed by: {}", angle_diff);
-    }
+    // if (angle_changed) {
+    //     info!("Angle changed by: {}", angle_diff);
+    // }
 
     let has_changed = pos_changed || scale_changed || angle_changed;
 
     if camera_query.0.did_change_last_frame == true && has_changed == false {
         events.write(CameraMovementStatusEvent::StoppedMoving);
-        info!("Camera stopped moving!");
     }
 
     if camera_query.0.did_change_last_frame == false && has_changed == true {
         events.write(CameraMovementStatusEvent::StartedMoving);
-        info!("Camera started moving!");
     }
 
     camera_query.0.did_change_last_frame = has_changed;

@@ -121,6 +121,7 @@ impl StrokeData {
     }
 }
 
+#[derive(Clone)]
 pub struct StrokeMetadata {
     pub timestamp: f64,
     pub id_random: u32,
@@ -134,6 +135,7 @@ impl StrokeMetadata {
     }
 }
 
+#[derive(Clone)]
 pub struct StrokeMesh {
     pub vertices: Vec<[f32; 3]>,
     pub indices: Vec<u32>,
@@ -188,6 +190,7 @@ impl StrokeMesh {
     }
 }
 
+#[derive(Clone)]
 pub struct Stroke {
     pub metadata: StrokeMetadata,
     pub data: StrokeData,

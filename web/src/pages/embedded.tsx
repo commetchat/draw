@@ -15,12 +15,10 @@ import { useSearchParams } from '@solidjs/router';
 
 let embedded_delegate: NetworkDelegate = {
     send_to: function (message: Uint8Array, to: String): void {
-
         window.parent.postMessage({
-            to: to,
-            message: message.buffer
-        }, {
-            transfer: [message.buffer]
+            "type": "send_to",
+            "info": { "to": to },
+            "body": message
         });
     },
 
@@ -30,7 +28,15 @@ let embedded_delegate: NetworkDelegate = {
 }
 
 window.onmessage = (message) => {
-    console.log(`${window.location.search} Received Message: `,)
+    if (message.data.type == "peerconnect") {
+        let from = message.data.info.from as string;
+        embedded_delegate.on_peer_connected!(from)
+    }
+
+    if (message.data.type == "recv_from") {
+        let from = message.data.info.from as string;
+        embedded_delegate.on_received!(message.data.body, from)
+    }
 }
 
 const Embedded: Component = () => {

@@ -14,7 +14,7 @@ use crate::{
     BACKGROUND,
     database::{web_database::set_initial_chunk_state, web_stroke_data::JsStrokeData},
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
-    mesh_conversion::timestamp_to_z_offset,
+    mesh_conversion::{stroke_to_mesh, timestamp_to_z_offset},
     stroke::{Stroke, StrokeData, StrokeMetadata},
 };
 
@@ -46,9 +46,9 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
         let num_keys = reader.read_u32()?;
         info!("Has {} keys", num_keys);
 
-        let mut indices = Vec::<u32>::new();
-        let mut colors = Vec::<[f32; 4]>::new();
-        let mut vertices = Vec::<[f32; 3]>::new();
+        let mut combined_indices = Vec::<u32>::new();
+        let mut combined_colors = Vec::<[f32; 4]>::new();
+        let mut combined_vertices = Vec::<[f32; 3]>::new();
         let mut strokes = Vec::new();
 
         for _ in 0..num_keys {
@@ -63,78 +63,39 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
             info!("Reading {} strokes for {:?}", num_strokes, owner_id);
 
             for _ in 0..num_strokes {
-                let id_random = reader.read_u32()?;
-                let timestamp = reader.read_f64()?;
-                let origin_x = reader.read_f32()?;
-                let origin_y = reader.read_f32()?;
+                let stroke_data = read_stroke(&mut reader, &owner_id)?;
 
-                let data_len = reader.read_u32()?;
-
-                let mut slice: Box<[u8]> = vec![0; data_len.try_into().unwrap()].into_boxed_slice();
-                reader.read(&mut slice).unwrap();
-
-                let data = StrokeData::parse(slice.to_vec());
-                let mut builder = LineBuilder::new();
-
-                let mut stroke_data = JsStrokeData::from_stroke(&Stroke {
-                    data: data.clone(),
-                    metadata: StrokeMetadata {
-                        timestamp: timestamp,
-                        id_random: id_random,
-                        owner: owner_id.clone(),
-                        origin: Vec2 {
-                            x: origin_x,
-                            y: origin_y,
-                        },
-                    },
-                    mesh: None,
-                });
-
-                let start_index = u32::try_from(vertices.len()).unwrap();
-
-                builder.width = data.width;
-                builder.default_color = match data.stroke_type {
-                    crate::stroke::StrokeType::Paint(color) => color,
-                    crate::stroke::StrokeType::Eraser => BACKGROUND,
-                };
-                builder.points = data.points;
-                builder.pressures = match data.pressures {
-                    Some(pressure) => pressure,
-                    None => Vec::new(),
-                };
-
-                let z_offset = timestamp_to_z_offset(timestamp);
-
-                builder.build();
-                vertices.reserve(builder.vertices.len());
-                colors.reserve(builder.colors.len());
-
-                for p in &builder.vertices {
-                    vertices.push([p.x + origin_x, p.y + origin_y, 0.0]);
-                    let mut color = builder.default_color.to_linear().to_f32_array(); // LinearRgba::from_u8_array_no_alpha().to_f32_array();
-
-                    color[3] = z_offset as f32;
-                    colors.push(color);
+                if (stroke_data.metadata.timestamp < 1749429383.719) {
+                    continue;
                 }
 
-                for i in builder.indices {
-                    indices.push(i + start_index);
+                let start_index = u32::try_from(combined_vertices.len()).unwrap();
+
+                let (mut verts, mut colors, indices) = stroke_to_mesh(&stroke_data);
+
+                for i in indices {
+                    combined_indices.push(i + start_index);
                 }
 
-                stroke_data.vertex_offset = Some(start_index);
-                stroke_data.num_verts = Some(u32::try_from(vertices.len()).unwrap());
+                let mut js_data = JsStrokeData::from_stroke(&stroke_data);
 
-                strokes.push(stroke_data);
+                js_data.vertex_offset = Some(start_index);
+                js_data.num_verts = Some(u32::try_from(verts.len()).unwrap());
+
+                combined_vertices.append(&mut verts);
+                combined_colors.append(&mut colors);
+
+                strokes.push(js_data);
             }
         }
 
-        let vertices = transmute_to_bytes(&vertices);
-        let colors = transmute_to_bytes(&colors);
+        let vertices = transmute_to_bytes(&combined_vertices);
+        let colors = transmute_to_bytes(&combined_colors);
 
         set_initial_chunk_state(
             chunk_id,
             vertices.to_vec(),
-            indices,
+            combined_indices,
             colors.to_vec(),
             strokes,
         );
@@ -143,6 +104,39 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
     info!("Done!");
 
     return Ok(());
+}
+
+pub fn read_stroke(
+    reader: &mut ByteReader,
+    owner_id: &Option<String>,
+) -> Result<Stroke, std::io::Error> {
+    let id_random = reader.read_u32()?;
+    let timestamp = reader.read_f64()?;
+    let origin_x = reader.read_f32()?;
+    let origin_y = reader.read_f32()?;
+
+    let data_len = reader.read_u32()?;
+
+    let mut slice: Box<[u8]> = vec![0; data_len.try_into().unwrap()].into_boxed_slice();
+    reader.read(&mut slice).unwrap();
+
+    let data = StrokeData::parse(slice.to_vec());
+
+    let stroke_data = Stroke {
+        data: data.clone(),
+        metadata: StrokeMetadata {
+            timestamp: timestamp,
+            id_random: id_random,
+            owner: owner_id.clone(),
+            origin: Vec2 {
+                x: origin_x,
+                y: origin_y,
+            },
+        },
+        mesh: None,
+    };
+
+    Ok(stroke_data)
 }
 
 fn read_string(reader: &mut ByteReader) -> Result<String, std::io::Error> {

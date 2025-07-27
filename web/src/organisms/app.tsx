@@ -31,8 +31,8 @@ declare global {
   interface Window { gameDatabase: WebDatabase; gameUtils: GameUtils }
 }
 
-async function initGame(instance_id: string) {
-  window.gameDatabase = new WebDatabase(instance_id)
+async function initGame(instance_id: string, delegate: NetworkDelegate) {
+  window.gameDatabase = new WebDatabase(instance_id, delegate)
   window.gameUtils = new GameUtils()
 
   game.default();
@@ -62,10 +62,10 @@ function openFile() {
 }
 
 interface NetworkDelegate {
-  send_to: (message: Uint8Array, to: String) => void;
-  on_received: ((message: Uint8Array, from: String) => void) | null;
-  on_peer_connected: ((from: String) => void) | null;
-  on_peer_disconnected: ((from: String) => void) | null;
+  send_to: (message: Uint8Array, to: string) => void;
+  on_received: ((message: Uint8Array, from: string) => void) | null;
+  on_peer_connected: ((from: string) => void) | null;
+  on_peer_disconnected: ((from: string) => void) | null;
 }
 
 interface AppProps {
@@ -75,14 +75,20 @@ interface AppProps {
 
 const App: Component<AppProps> = (props) => {
 
-  initGame(props.instance_id);
+  initGame(props.instance_id, props.delegate);
+
+  const save_to_file = () => {
+    window.gameDatabase.save_to_file()
+  }
 
   props.delegate.on_received = (message, from) => {
 
+    game.web_receive_packet(from, message)
   }
 
   props.delegate.on_peer_connected = (from) => {
-
+    console.log("Peer connected! ", from)
+    window.gameDatabase.send_strokes_to_user(from);
   }
 
   props.delegate.on_peer_disconnected = (from) => {
@@ -91,10 +97,6 @@ const App: Component<AppProps> = (props) => {
 
   let [getLines, setLines] = createSignal<string>("")
   let original = console.log;
-
-  const save_to_file = () => {
-    window.gameDatabase.save_to_file()
-  }
 
   function handleUIMessage(message: UIMessage): void {
 

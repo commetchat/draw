@@ -137,7 +137,6 @@ pub fn update_strokes_system(
                 }
             }
             ActiveStrokeEvent::DeleteActiveStroke(data) => {
-                info!("Got Delete Active Stroke Event");
                 for stroke in current_strokes.iter_mut() {
                     if stroke.1.timestamp == data.timestamp && stroke.1.id_random == data.id_random
                     {

@@ -27,6 +27,10 @@ self.onmessage = function (e) {
     if (e.data.type == "save_to_file") {
         save_to_file();
     }
+
+    if (e.data.type == "send_strokes_to_user") {
+        send_strokes_to_user(e.data.data);
+    }
 }
 
 const strokes = "stroke"
@@ -71,6 +75,7 @@ async function initDb(instance_id: string) {
 
             objectStore.createIndex("chunk_key", "chunk_key", { unique: false });
             objectStore.createIndex("owner_id", "owner_id", { unique: false });
+            objectStore.createIndex("timestamp", "timestamp", { unique: false });
 
             var mesh_store = db.createObjectStore(mesh, {
                 keyPath: "chunk_key"
@@ -105,9 +110,6 @@ function store_multiple_strokes(items: [game.StrokeData]) {
     let meshes_to_append: game.StrokeData[] = [];
 
     tx!.oncomplete = () => {
-        console.log("Transaction complete!")
-        console.log(meshes_to_append);
-
         postMessage({
             type: "append_mesh_data",
             data: meshes_to_append,
@@ -119,8 +121,6 @@ function store_multiple_strokes(items: [game.StrokeData]) {
     }
 
     const store = tx?.objectStore(strokes);
-    console.log("Inserting strokes: ", items.length);
-
 
     let keys = new Set<String>()
 
@@ -131,7 +131,6 @@ function store_multiple_strokes(items: [game.StrokeData]) {
     let chunk_keys = keys.keys().toArray().sort();
 
     let meshes = tx?.objectStore(mesh);
-    console.log("Keys: ", chunk_keys)
     let mesh_data_request = meshes!.getAll(IDBKeyRange.bound(chunk_keys[0], chunk_keys[chunk_keys.length - 1]));
 
     mesh_data_request.onsuccess = (ev) => {
@@ -211,20 +210,11 @@ function store_multiple_strokes(items: [game.StrokeData]) {
         mesh_map.values().forEach((e) => meshes!.put(e));
 
         tx?.commit();
-
-
-        console.log("Stored strokes, returning merged mesh data:")
-        console.log((meshes_to_append as any))
-
     }
 
     mesh_data_request.onerror = (ev) => {
         console.log("Failed to get mesh from db")
     }
-
-
-    //items.forEach((data) => data.free());
-    console.log("Done!");
 }
 
 function load_mesh_for_chunk(id: string) {
@@ -253,6 +243,72 @@ function load_mesh_for_chunk(id: string) {
 
         }
     }
+
+}
+
+function send_strokes_to_user(userid: string) {
+    const tx = db?.transaction(strokes, "readonly");
+    const store = tx?.objectStore(strokes);
+
+    var count = store!.count()
+    count.onsuccess = function () {
+        let num_strokes = count.result;
+        send_stroke_index_to_user(userid, 0, num_strokes)
+    }
+}
+
+function send_stroke_index_to_user(userid: string, index: number, count: number) {
+    const tx = db?.transaction(strokes, "readonly");
+    const store = tx?.objectStore(strokes);
+
+
+
+    var cursorRequest = store!.index('timestamp').openCursor(null, 'next');
+    let has_advanced = false;
+
+    cursorRequest.onsuccess = function (e) {
+
+        var cursor = (e as any).target.result;
+
+        if (cursor == null) {
+            console.log("Done sending everything!");
+            return;
+        }
+
+        if (index != 0) {
+            if (has_advanced == false) {
+                cursor.advance(index);
+                has_advanced = true;
+                return;
+            }
+        }
+
+        if (index % 50 == 0) {
+            console.log(`Sending Strokes... ${index} / ${count}  ${Math.round((index / count) * 10000) / 100}%`,);
+        }
+
+        let stroke = cursor.value as game.StrokeData;
+
+        var writer = new BinaryWriter();
+        writer.writeUint16(1);
+        writeStroke(writer, stroke);
+
+        let bytes = writer.getBuffer();
+
+        postMessage({
+            type: "send_to_user",
+            data: {
+                user: userid,
+                data: bytes,
+            }
+        }, {
+            transfer: [bytes]
+        })
+
+        setTimeout(() => {
+            send_stroke_index_to_user(userid, index + 1, count);
+        }, 20)
+    };
 
 }
 
@@ -337,8 +393,7 @@ function writeStrokes(writer: BinaryWriter, currentChunkKey: string, chunkStroke
     });
 
     let keys = ownerToStrokes.keys().toArray();
-    console.log("Writing keys: ");
-    console.log(keys);
+
     writer.writeUint32(keys.length);
 
 
@@ -357,22 +412,25 @@ function writeStrokes(writer: BinaryWriter, currentChunkKey: string, chunkStroke
 
         strokes.forEach((stroke) => {
 
-            writer.writeUint32(stroke.id_random)
-            writer.writeFloat64(stroke.timestamp)
-            writer.writeFloat32(stroke.origin_x);
-            writer.writeFloat32(stroke.origin_y);
-            writer.writeUint32(stroke.stroke_data.length);
-            writer.writeBytes(stroke.stroke_data);
+            writeStroke(writer, stroke);
         });
     });
 }
 
 
 
+function writeStroke(writer: BinaryWriter, stroke: game.StrokeData) {
+    writer.writeUint32(stroke.id_random);
+    writer.writeFloat64(stroke.timestamp);
+    writer.writeFloat32(stroke.origin_x);
+    writer.writeFloat32(stroke.origin_y);
+    writer.writeUint32(stroke.stroke_data.length);
+    writer.writeBytes(stroke.stroke_data);
+}
+
 function set_initial_chunk_state(data: any) {
     const tx = db?.transaction([strokes, mesh], "readwrite");
     tx!.oncomplete = () => {
-        console.log("Transaction complete!")
         postMessage({
             type: "do_full_chunk_reload",
             data: {
@@ -388,8 +446,6 @@ function set_initial_chunk_state(data: any) {
     let items = data.strokes;
 
     const store = tx?.objectStore(strokes);
-    console.log("Inserting strokes: ", items.length);
-
     let meshes = tx?.objectStore(mesh);
 
 
