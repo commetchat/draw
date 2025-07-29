@@ -1,12 +1,16 @@
 use bevy::{
     app::{Plugin, Startup, Update},
-    ecs::{component::Component, system::Commands},
+    ecs::{component::Component, schedule::IntoScheduleConfigs, system::Commands},
+    math::Vec2,
     utils::default,
 };
 
 use crate::{
-    tools::paintbrush::{
-        ToolPaintBrush, paintbrush_gizmo_system, paintbrush_system, paintbrush_ui_system,
+    tools::{
+        color_picker::{ToolColorPicker, color_picker_system, color_picker_ui_system},
+        paintbrush::{
+            ToolPaintBrush, paintbrush_gizmo_system, paintbrush_system, paintbrush_ui_system,
+        },
     },
     ui::ui_messages::PaintbrushArgs,
 };
@@ -22,6 +26,9 @@ impl Plugin for ToolsPlugin {
         app.add_systems(Update, paintbrush_ui_system);
         app.add_systems(Update, paintbrush_system);
         app.add_systems(Update, paintbrush_gizmo_system);
+        app.add_systems(Update, color_picker_system);
+
+        app.add_systems(Update, color_picker_ui_system);
     }
 }
 
@@ -37,4 +44,6 @@ fn setup(mut commands: Commands) {
         },
         ActiveTool {},
     ));
+
+    commands.spawn(ToolColorPicker {});
 }

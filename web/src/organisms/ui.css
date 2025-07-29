@@ -1,0 +1,7 @@
+.tool-buttons {
+    --md-filled-icon-button-container-height: 60px;
+    --md-filled-icon-button-container-width: 60px;
+
+    --md-filled-tonal-icon-button-container-height: 60px;
+    --md-filled-tonal-icon-button-container-width: 60px;
+}

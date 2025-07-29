@@ -16,20 +16,40 @@ pub struct EraserArgs {
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]
+#[ts(export, export_to = "../web/src/bindings/ui_binding.ts")]
+pub struct Color {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+}
+
+#[derive(TS, Debug, Serialize, Deserialize)]
 #[serde(tag = "tool")]
 #[ts(export, export_to = "../web/src/bindings/ui_binding.ts")]
 pub enum Tool {
     Paintbrush(PaintbrushArgs),
     Eraser(EraserArgs),
+    ColorPicker,
 }
 
-#[derive(TS, Debug, Event, Serialize, Deserialize)]
+#[derive(TS, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[ts(export, export_to = "../web/src/bindings/ui_binding.ts")]
 pub enum UIMessage {
     LoadFile,
     SaveFile,
     SetTool(Tool),
+    SetColor(Color),
     Undo,
     Redo,
+}
+
+#[derive(Event)]
+pub struct ReceivedUIMessage {
+    pub data: UIMessage,
+}
+
+#[derive(Event)]
+pub struct SentUIMessage {
+    pub data: UIMessage,
 }

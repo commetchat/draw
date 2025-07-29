@@ -21,7 +21,7 @@ use crate::{
     retained_view::copy_camera::TargetCamera,
     stylus_input::StylusEvent,
     tools::tools_plugin::ActiveTool,
-    ui::ui_messages::{PaintbrushArgs, UIMessage},
+    ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, UIMessage},
     utils::{get_random_uint32, get_system_time},
 };
 
@@ -158,11 +158,11 @@ pub fn paintbrush_system(
 
 pub fn paintbrush_ui_system(
     mut paintbrush: Single<(Entity, &mut ToolPaintBrush)>,
-    mut events: EventReader<UIMessage>,
+    mut events: EventReader<ReceivedUIMessage>,
     mut commands: Commands,
 ) {
     for event in events.read() {
-        match event {
+        match &event.data {
             UIMessage::SetTool(tool) => match tool {
                 crate::ui::ui_messages::Tool::Paintbrush(paintbrush_args) => {
                     paintbrush.1.args = paintbrush_args.clone();

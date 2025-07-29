@@ -10,24 +10,33 @@ import '@material/web/iconbutton/filled-icon-button';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
 import { WebDatabase } from '../web_database';
-import UI from './ui';
+import UI, { UIDelegate } from './ui';
 import { UIMessage } from '../bindings/ui_binding';
 
 
-class GameUtils {
 
-  constructor(delegate: NetworkDelegate, game_delegate: GameDelegate) {
+class GameUtils {
+  constructor(delegate: NetworkDelegate, game_delegate: GameDelegate, ui_delegate: UIDelegate) {
     this.network_delegate = delegate;
     this.game_delegate = game_delegate;
+    this.ui_delegate = ui_delegate;
   }
 
   game_delegate: GameDelegate
   network_delegate: NetworkDelegate
+  ui_delegate: UIDelegate
 
   // Called when bevy side is ready
   init() {
     window.gameDatabase.init();
-    this.game_delegate.on_ready();
+    this.game_delegate.on_ready()
+  }
+
+  ui_message_callback(data_str: string) {
+    let msg = JSON.parse(data_str) as UIMessage;
+    if (this.ui_delegate.on_received_msg != null) {
+      this.ui_delegate.on_received_msg!(msg);
+    }
   }
 
   get_system_time(): number {
@@ -50,9 +59,15 @@ declare global {
   interface Window { gameDatabase: WebDatabase; gameUtils: GameUtils }
 }
 
+
+let ui_delegate: UIDelegate = {
+  on_received_msg: null
+};
+
+
 async function initGame(instance_id: string, network_delegate: NetworkDelegate, game_delegate: GameDelegate) {
   window.gameDatabase = new WebDatabase(instance_id, network_delegate)
-  window.gameUtils = new GameUtils(network_delegate, game_delegate)
+  window.gameUtils = new GameUtils(network_delegate, game_delegate, ui_delegate)
 
   game.default();
 }
@@ -155,7 +170,7 @@ const App: Component<AppProps> = (props) => {
         </div>
 
 
-        <UI callback={handleUIMessage} />
+        <UI callback={handleUIMessage} delegate={ui_delegate} />
       </header>
     </div >
   );

@@ -35,9 +35,9 @@ pub struct RetainedView {
 
 #[derive(Resource)]
 
-struct RetainedTexture {
-    image_handle: Handle<Image>,
-    material_handle: Handle<ViewportTextureMaterial>,
+pub struct RetainedTexture {
+    pub image_handle: Handle<Image>,
+    pub material_handle: Handle<ViewportTextureMaterial>,
 }
 
 // This is the struct that will be passed to your shader

@@ -1,4 +1,4 @@
-import { createSignal, type Component } from 'solid-js';
+import { createEffect, createSignal, type Component } from 'solid-js';
 
 import './color-picker.css';
 
@@ -9,69 +9,67 @@ import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
 
 import '@material/web/slider/slider.js';
+import { hsl2rgb, rgb2hex } from '../../utils';
 
-// input: h as an angle in [0,360] and s,l in [0,1] - output: r,g,b in [0,1]
-function hsl2rgb(h: number, s: number, l: number) {
-    let a = s * Math.min(l, 1 - l);
-    let f = (n: number, k = (n + h / 30) % 12) => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return [f(0), f(8), f(4)];
-}
 
-function rgb2hex(numbers: number[]): string {
-
-    var hex = numbers.map((n) => {
-        return Math.round(255 * n)
-            .toString(16)
-            .padStart(2, "0");
-    });
-    let result = `#${hex[0]}${hex[1]}${hex[2]}`
-
-    return result;
-}
 
 interface ColorPickerProps {
-    onchanged: ((color: number[]) => void) | null;
+    onchanged: ((hsl: number[]) => void) | null;
+    hsl: number[],
 }
 
 
 const ColorPicker: Component<ColorPickerProps> = (props) => {
     const [color, setColor] = createSignal("#aabbcc")
 
-    const [h, setHue] = createSignal(360)
-    const [s, setSaturation] = createSignal(0.5);
-    const [l, setLightness] = createSignal(0.5);
+    const h = (): number => {
+        return props.hsl[0];
+    }
 
+    const s = (): number => {
+        return props.hsl[1];
+    }
 
+    const l = (): number => {
+        return props.hsl[2];
+    }
 
     const hueColor = () => rgb2hex(hsl2rgb(h(), 0.5, 0.5));
     const satColor = () => rgb2hex(hsl2rgb(h(), s(), 0.5));
     const finalColor = () => rgb2hex(hsl2rgb(h(), s(), l()));
 
-
-
+    var set_h = h();
+    var set_s = s();
+    var set_l = l();
 
     const hueEvent = (e: Event) => {
-        setHue((e as any).target.value)
+        set_h = (e as any).target.value;
         reportChange()
     };
 
     const satEvent = (e: Event) => {
-        setSaturation((e as any).target.value)
+        set_s = (e as any).target.value
         reportChange()
     };
 
     const lgtEvent = (e: Event) => {
-        setLightness((e as any).target.value)
+        set_l = (e as any).target.value;
         reportChange()
     };
 
+    createEffect(() => {
+        set_h = props.hsl[0];
+        set_s = props.hsl[1];
+        set_l = props.hsl[2];
+    })
+
     const reportChange = () => {
-        let color = hsl2rgb(h(), s(), l());
+        console.log(set_h, set_s, set_l);
+        console.log("Setting color: ", color);
         if (props.onchanged != null) {
-            props.onchanged(color);
+            props.onchanged([set_h, set_s, set_l]);
         }
     }
-
 
     return (
         <div class='flex w-[500px] items-center justify-center' style={`--md-sys-color-primary: ${finalColor()};`}>
