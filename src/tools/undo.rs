@@ -1,20 +1,23 @@
 use std::sync::{LazyLock, Mutex};
 
 use bevy::{
-    ecs::event::EventReader,
+    ecs::event::{EventReader, EventWriter},
     log::info,
     math::{Vec2, VectorSpace},
 };
 
 use crate::{
-    active_strokes::active_stroke::ActiveStrokeEvent,
+    active_strokes::active_stroke::{ActiveStrokeEvent, RemoveStrokeEvent},
     database::web_database::delete_stroke,
     stroke::StrokeMetadata,
     ui::ui_messages::{ReceivedUIMessage, UIMessage},
 };
 static UNDO_QUEUE: LazyLock<Mutex<Vec<(f64, u32)>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
-pub fn undo_ui_system(mut events: EventReader<ReceivedUIMessage>) {
+pub fn undo_ui_system(
+    mut events: EventReader<ReceivedUIMessage>,
+    mut remove_events: EventWriter<RemoveStrokeEvent>,
+) {
     let mut queue = UNDO_QUEUE.lock().unwrap();
 
     for event in events.read() {
@@ -23,18 +26,11 @@ pub fn undo_ui_system(mut events: EventReader<ReceivedUIMessage>) {
                 let item = queue.pop();
                 match item {
                     Some(item) => {
-                        let meta = StrokeMetadata {
+                        remove_events.write(RemoveStrokeEvent {
                             timestamp: item.0,
                             id_random: item.1,
                             owner: None,
-                            origin: Vec2::ZERO,
-                        };
-
-                        let id = meta.get_id();
-
-                        info!("Undoing: {}", id);
-
-                        delete_stroke(id);
+                        });
                     }
                     None => {
                         info!("Nothing left to undo!");

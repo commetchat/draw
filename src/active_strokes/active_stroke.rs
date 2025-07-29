@@ -42,3 +42,10 @@ pub enum ActiveStrokeEvent {
     StrokeFinished(StrokeFinishedData),
     DeleteActiveStroke(StrokeFinishedData),
 }
+
+#[derive(Debug, Event, Clone)]
+pub struct RemoveStrokeEvent {
+    pub timestamp: f64,
+    pub id_random: u32,
+    pub owner: Option<String>,
+}

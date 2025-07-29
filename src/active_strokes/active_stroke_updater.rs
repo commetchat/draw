@@ -7,6 +7,7 @@ use bevy::{
         system::{Commands, Query, ResMut},
     },
     log::info,
+    math::Vec2,
     render::{
         mesh::{Indices, Mesh, Mesh2d},
         view::{NoFrustumCulling, RenderLayers},
@@ -16,8 +17,11 @@ use bevy::{
 
 use crate::{
     CustomMaterial, RENDER_LAYER_ACTIVE_STROKES,
-    active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent},
-    database::{web_database::store_multiple_strokes, web_stroke_data::JsStrokeData},
+    active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent},
+    database::{
+        web_database::{delete_stroke, store_multiple_strokes},
+        web_stroke_data::JsStrokeData,
+    },
     line_builder::LineBuilder,
     mesh_conversion::timestamp_to_z_offset,
     stroke::{Stroke, StrokeData, StrokeMesh, StrokeMetadata},
@@ -144,6 +148,27 @@ pub fn update_strokes_system(
                 }
             }
         }
+    }
+}
+
+pub fn remove_strokes_system(mut events: EventReader<RemoveStrokeEvent>) {
+    if events.is_empty() {
+        return;
+    }
+
+    for event in events.read() {
+        let meta = StrokeMetadata {
+            timestamp: event.timestamp,
+            id_random: event.id_random,
+            owner: None,
+            origin: Vec2::ZERO,
+        };
+
+        let id = meta.get_id();
+
+        info!("Removing: {}", id);
+
+        delete_stroke(id);
     }
 }
 

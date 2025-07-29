@@ -4,9 +4,11 @@ use bevy::{ecs::event::Event, log::info};
 use binary_util::{ByteReader, ByteWriter};
 
 use crate::{
+    active_strokes::active_stroke::RemoveStrokeEvent,
     load_file::read_stroke,
     networking::packets::{
         Packet, new_point::NewPointPacketData, stroke_complete::StrokeCompleteData,
+        stroke_removed::StrokeRemovedPacket,
     },
     stroke::{Stroke, StrokeData},
 };
@@ -17,6 +19,7 @@ use crate::networking::packets::stroke_complete;
 pub enum PacketType {
     StrokeComplete = 1,
     NewPoint = 2,
+    StrokeRemoved = 3,
 }
 
 impl TryFrom<u16> for PacketType {
@@ -26,6 +29,7 @@ impl TryFrom<u16> for PacketType {
         match v {
             x if x == PacketType::StrokeComplete as u16 => Ok(PacketType::StrokeComplete),
             x if x == PacketType::NewPoint as u16 => Ok(PacketType::NewPoint),
+            x if x == PacketType::StrokeRemoved as u16 => Ok(PacketType::StrokeRemoved),
             _ => Err(()),
         }
     }
@@ -34,6 +38,7 @@ impl TryFrom<u16> for PacketType {
 pub enum PacketData {
     StrokeComplete(StrokeCompleteData),
     NewPoint(NewPointPacketData),
+    StrokeRemoved(StrokeRemovedPacket),
 }
 
 #[derive(Event)]
@@ -65,6 +70,7 @@ pub fn parse_packet(data: Vec<u8>) -> Result<PacketData, std::io::Error> {
     let packet = match packet_type {
         PacketType::StrokeComplete => StrokeCompleteData::parse(&mut reader),
         PacketType::NewPoint => NewPointPacketData::parse(&mut reader),
+        PacketType::StrokeRemoved => StrokeRemovedPacket::parse(&mut reader),
     };
 
     match packet {
@@ -77,6 +83,7 @@ pub fn write_packet(writer: &mut ByteWriter, packet: &PacketData) -> Result<(), 
     let packet_type = match packet {
         PacketData::StrokeComplete(_) => PacketType::StrokeComplete,
         PacketData::NewPoint(_) => PacketType::NewPoint,
+        PacketData::StrokeRemoved(stroke_removed_packet) => PacketType::StrokeRemoved,
     };
 
     writer.write_u16(packet_type as u16)?;
@@ -84,5 +91,6 @@ pub fn write_packet(writer: &mut ByteWriter, packet: &PacketData) -> Result<(), 
     match packet {
         PacketData::StrokeComplete(stroke_complete_data) => stroke_complete_data.write(writer),
         PacketData::NewPoint(new_point_packet_data) => new_point_packet_data.write(writer),
+        PacketData::StrokeRemoved(stroke_removed_packet) => stroke_removed_packet.write(writer),
     }
 }

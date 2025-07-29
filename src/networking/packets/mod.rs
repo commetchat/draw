@@ -4,7 +4,7 @@ use crate::networking::packet::PacketData;
 
 pub mod new_point;
 pub mod stroke_complete;
-
+pub mod stroke_removed;
 pub trait Packet {
     fn parse(data: &mut ByteReader) -> Result<PacketData, std::io::Error>;
 
