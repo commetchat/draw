@@ -114,7 +114,7 @@ const UI: Component<UIProps> = (props) => {
 
                 <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay' style={"filter: drop-shadow(0px 0px 1px gray);"} >
                     <div style={"margin: 10px; "}>
-                        <md-slider oninput={(e) => setPaintbrushWidth((e.target as any).value)} value={paintbrushWidth()} ></md-slider>
+                        <md-slider max={500} oninput={(e) => setPaintbrushWidth((e.target as any).value)} value={paintbrushWidth()} ></md-slider>
                         <ColorPicker onchanged={setPaintColorHsl} hsl={paintColorHsl()}></ColorPicker>
                     </div>
                 </div>
