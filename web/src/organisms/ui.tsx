@@ -132,7 +132,7 @@ const UI: Component<UIProps> = (props) => {
                         </Show>
                     </div>
                     <div>
-                        <md-filled-tonal-icon-button onclick={() => setCurrentTool(colorPicker)}>
+                        <md-filled-tonal-icon-button>
                             <md-icon>comic_bubble</md-icon>
                         </md-filled-tonal-icon-button>
                     </div>
