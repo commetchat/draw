@@ -12,7 +12,7 @@ import '@material/web/checkbox/checkbox.js';
 import '@material/web/slider/slider.js';
 import ColorPicker from '../molecules/color-picker/color-picker';
 import { UIMessage } from '../bindings/ui_binding';
-import { hsl2rgb, rgb2hsl } from '../utils';
+import { hsl2rgb, rgb2hex, rgb2hsl } from '../utils';
 import h from 'solid-js/h';
 
 interface UIProps {
@@ -90,52 +90,55 @@ const UI: Component<UIProps> = (props) => {
     });
 
     return (
-        <div class='pointer-events-none' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
+        <div style={`--md-sys-color-primary: ${rgb2hex(hsl2rgb(paintColorHsl()[0], 0.2, 0.5))}; --md-sys-color-secondary-container: ${rgb2hex(hsl2rgb(paintColorHsl()[0], 0.2, 0.8))}`}>
 
-            <div class="pointer-events-auto flex justify-between gap-2 " style={"margin: 10px; position: absolute; left: 0;"}>
-                <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
-                <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
-            </div>
+            <div class='pointer-events-none' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
 
-            <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay' style={"filter: drop-shadow(0px 0px 1px gray);"} >
-                <div style={"margin: 10px; "}>
-                    <md-slider oninput={(e) => setPaintbrushWidth((e.target as any).value)} value={paintbrushWidth()} ></md-slider>
-                    <ColorPicker onchanged={setPaintColorHsl} hsl={paintColorHsl()}></ColorPicker>
+                <div class="pointer-events-auto flex justify-between gap-2 " style={"margin: 10px; position: absolute; left: 0;"}>
+                    <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
+                    <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
                 </div>
-            </div>
 
-            <div class="tool-buttons ml-4 pointer-events-auto absolute top-1/3 bottom-1/2 flex flex-col gap-2">
-                <div>
-                    <Show when={currentTool() != paintbrush}>
-                        <md-filled-tonal-icon-button onclick={() => setCurrentTool(paintbrush)}>
-                            <md-icon>stylus</md-icon>
-                        </md-filled-tonal-icon-button>
-                    </Show>
-                    <Show when={currentTool() == paintbrush}>
-                        <md-filled-icon-button onclick={() => setCurrentTool(paintbrush)}>
-                            <md-icon className='my-7'>stylus</md-icon>
-                        </md-filled-icon-button>
-                    </Show>
+                <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay' style={"filter: drop-shadow(0px 0px 1px gray);"} >
+                    <div style={"margin: 10px; "}>
+                        <md-slider oninput={(e) => setPaintbrushWidth((e.target as any).value)} value={paintbrushWidth()} ></md-slider>
+                        <ColorPicker onchanged={setPaintColorHsl} hsl={paintColorHsl()}></ColorPicker>
+                    </div>
                 </div>
-                <div>
-                    <Show when={currentTool() != colorPicker}>
+
+                <div class="tool-buttons ml-4 pointer-events-auto absolute top-1/3 bottom-1/2 flex flex-col gap-2">
+                    <div>
+                        <Show when={currentTool() != paintbrush}>
+                            <md-filled-tonal-icon-button onclick={() => setCurrentTool(paintbrush)}>
+                                <md-icon>stylus</md-icon>
+                            </md-filled-tonal-icon-button>
+                        </Show>
+                        <Show when={currentTool() == paintbrush}>
+                            <md-filled-icon-button onclick={() => setCurrentTool(paintbrush)}>
+                                <md-icon className='my-7'>stylus</md-icon>
+                            </md-filled-icon-button>
+                        </Show>
+                    </div>
+                    <div>
+                        <Show when={currentTool() != colorPicker}>
+                            <md-filled-tonal-icon-button onclick={() => setCurrentTool(colorPicker)}>
+                                <md-icon>dropper_eye</md-icon>
+                            </md-filled-tonal-icon-button>
+                        </Show>
+                        <Show when={currentTool() == colorPicker}>
+                            <md-filled-icon-button onclick={() => setCurrentTool(colorPicker)}>
+                                <md-icon>dropper_eye</md-icon>
+                            </md-filled-icon-button>
+                        </Show>
+                    </div>
+                    <div>
                         <md-filled-tonal-icon-button onclick={() => setCurrentTool(colorPicker)}>
-                            <md-icon>dropper_eye</md-icon>
+                            <md-icon>comic_bubble</md-icon>
                         </md-filled-tonal-icon-button>
-                    </Show>
-                    <Show when={currentTool() == colorPicker}>
-                        <md-filled-icon-button onclick={() => setCurrentTool(colorPicker)}>
-                            <md-icon>dropper_eye</md-icon>
-                        </md-filled-icon-button>
-                    </Show>
+                    </div>
                 </div>
-                <div>
-                    <md-filled-tonal-icon-button onclick={() => setCurrentTool(colorPicker)}>
-                        <md-icon>comic_bubble</md-icon>
-                    </md-filled-tonal-icon-button>
-                </div>
-            </div>
-        </div >
+            </div >
+        </div>
 
     );
 };
