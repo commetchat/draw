@@ -26,6 +26,7 @@ interface UIDelegate {
 }
 
 const UI: Component<UIProps> = (props) => {
+    const [gameReady, setGameReady] = createSignal(false);
     const [paintColorHsl, setPaintColorHsl] = createSignal<[number, number, number]>([0, 1.0, 0.5])
     const [paintbrushWidth, setPaintbrushWidth] = createSignal(10.0);
     const [currentTool, setCurrentTool] = createSignal("Paintbrush");
@@ -57,6 +58,10 @@ const UI: Component<UIProps> = (props) => {
                 width: paintbrushWidth(),
                 color: paintColorsRgb()
             })
+        }
+
+        if (msg.type == "GameReady") {
+            setGameReady(true);
         }
 
     }
@@ -99,6 +104,13 @@ const UI: Component<UIProps> = (props) => {
                     <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
                     <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
                 </div>
+
+                <Show when={gameReady() == false}>
+                    <div class="pointer-events-auto absolute top-1/2 left-1/2">
+                        <md-filled-button> <div class='mx-4' >Getting Ready...</div></md-filled-button>
+                    </div>
+                </Show>
+
 
                 <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay' style={"filter: drop-shadow(0px 0px 1px gray);"} >
                     <div style={"margin: 10px; "}>

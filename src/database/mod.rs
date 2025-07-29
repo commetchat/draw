@@ -29,6 +29,7 @@ use crate::{
     },
     line_builder::{LineBuilder, LineCapMode, LineJointMode},
     stroke::{Stroke, StrokeEvent},
+    ui::{ui_messages::UIMessage::GameReady, ui_messages_queue::send_ui_message},
     utils::now,
 };
 
@@ -141,4 +142,6 @@ pub fn db_ready() {
 
     let mut ready = DATABASE_READY.lock().unwrap();
     *ready = true;
+
+    send_ui_message(GameReady);
 }
