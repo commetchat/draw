@@ -20,6 +20,7 @@
     "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.1.11",
     "mdui": "^2.1.3",
+    "peerjs": "^1.5.5",
     "solid-js": "^1.9.5",
     "tailwindcss": "^4.1.11"
   }

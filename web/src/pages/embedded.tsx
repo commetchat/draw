@@ -9,7 +9,7 @@ import * as game from '../bevy/draw-bevy';
 import '@material/web/iconbutton/filled-icon-button';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
-import App, { NetworkDelegate } from '../organisms/app';
+import App, { GameDelegate, NetworkDelegate } from '../organisms/app';
 import { useSearchParams } from '@solidjs/router';
 
 
@@ -39,11 +39,16 @@ window.onmessage = (message) => {
     }
 }
 
+let game_delegate: GameDelegate = {
+    on_ready: function (): void {
+    }
+}
+
 const Embedded: Component = () => {
     const [searchParams, setSearchParams] = useSearchParams();
 
     return (
-        <App instance_id={searchParams.id as string} delegate={embedded_delegate} />
+        <App instance_id={searchParams.id as string} network_delegate={embedded_delegate} game_delegate={game_delegate} />
     );
 };
 

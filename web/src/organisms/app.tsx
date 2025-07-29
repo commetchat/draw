@@ -16,15 +16,18 @@ import { UIMessage } from '../bindings/ui_binding';
 
 class GameUtils {
 
-  constructor(delegate: NetworkDelegate) {
+  constructor(delegate: NetworkDelegate, game_delegate: GameDelegate) {
     this.network_delegate = delegate;
+    this.game_delegate = game_delegate;
   }
 
+  game_delegate: GameDelegate
   network_delegate: NetworkDelegate
 
   // Called when bevy side is ready
   init() {
     window.gameDatabase.init();
+    this.game_delegate.on_ready();
   }
 
   get_system_time(): number {
@@ -47,9 +50,9 @@ declare global {
   interface Window { gameDatabase: WebDatabase; gameUtils: GameUtils }
 }
 
-async function initGame(instance_id: string, delegate: NetworkDelegate) {
-  window.gameDatabase = new WebDatabase(instance_id, delegate)
-  window.gameUtils = new GameUtils(delegate)
+async function initGame(instance_id: string, network_delegate: NetworkDelegate, game_delegate: GameDelegate) {
+  window.gameDatabase = new WebDatabase(instance_id, network_delegate)
+  window.gameUtils = new GameUtils(network_delegate, game_delegate)
 
   game.default();
 }
@@ -84,32 +87,37 @@ interface NetworkDelegate {
   on_peer_disconnected: ((from: string) => void) | null;
 }
 
+interface GameDelegate {
+  on_ready: () => void
+}
+
 interface AppProps {
   instance_id: string,
-  delegate: NetworkDelegate,
+  network_delegate: NetworkDelegate,
+  game_delegate: GameDelegate
 }
 
 const App: Component<AppProps> = (props) => {
 
-  initGame(props.instance_id, props.delegate);
+  initGame(props.instance_id, props.network_delegate, props.game_delegate);
 
   const save_to_file = () => {
     window.gameDatabase.save_to_file()
   }
 
-  props.delegate.on_received = (message, from) => {
+  props.network_delegate.on_received = (message, from) => {
 
     game.web_receive_packet(from, message)
   }
 
-  props.delegate.on_peer_connected = (from) => {
+  props.network_delegate.on_peer_connected = (from) => {
     console.log("Peer connected! ", from)
     game.web_peer_connected(from);
     window.gameDatabase.send_strokes_to_user(from);
 
   }
 
-  props.delegate.on_peer_disconnected = (from) => {
+  props.network_delegate.on_peer_disconnected = (from) => {
     game.web_peer_disconnected(from);
   }
 
@@ -154,4 +162,4 @@ const App: Component<AppProps> = (props) => {
 };
 
 export default App;
-export type { NetworkDelegate };
+export type { NetworkDelegate, GameDelegate };
