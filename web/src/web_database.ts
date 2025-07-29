@@ -99,6 +99,13 @@ export class WebDatabase {
         });
     }
 
+    delete_stroke(id: string) {
+        this.worker.postMessage({
+            type: "delete_stroke",
+            data: id
+        })
+    }
+
 
     handleMessage(message: MessageEvent<any>) {
         if (message.data.type == "loaded_mesh_for_chunk") {
@@ -129,6 +136,10 @@ export class WebDatabase {
             let bytes = new Uint8Array(message.data.data.data); //LOL
             let user = message.data.data.user as string;
             this.network_delegate.send_to(bytes, user)
+        }
+
+        if (message.data.type == "remove_verts") {
+            game.db_remove_verts(message.data.data.chunk_key, message.data.data.offset, message.data.data.num_verts)
         }
     }
 }

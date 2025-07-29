@@ -21,4 +21,8 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = gameDatabase)]
     pub fn load_mesh_for_chunk(id: String);
+
+    #[wasm_bindgen(js_namespace = gameDatabase)]
+    pub fn delete_stroke(id: String);
+
 }

@@ -5,6 +5,7 @@ import './ui.css';
 import '@material/web/button/filled-button.js';
 import '@material/web/iconbutton/filled-icon-button';
 import '@material/web/iconbutton/filled-tonal-icon-button';
+import '@material/web/fab/fab';
 import '@material/web/icon/icon.js';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
@@ -137,6 +138,13 @@ const UI: Component<UIProps> = (props) => {
                         </md-filled-tonal-icon-button>
                     </div>
                 </div>
+
+                <div class="pointer-events-auto flex justify-between gap-2 absolute bottom-0 right-0 m-4 ">
+                    <md-fab aria-label="Edit" onclick={() => postUiMessage({ type: "Undo" })}>
+                        <md-icon slot="icon">undo</md-icon>
+                    </md-fab>
+                </div>
+
             </div >
         </div>
 

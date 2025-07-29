@@ -33,6 +33,7 @@ pub struct StrokeFinishedData {
     pub timestamp: f64,
     pub id_random: u32,
     pub stroke_origin: Vec2,
+    pub owner: Option<String>,
 }
 
 #[derive(Debug, Event)]

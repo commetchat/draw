@@ -37,6 +37,12 @@ pub mod web_stroke_data;
 
 pub struct Database;
 
+pub struct RemoveVertsData {
+    pub chunk_key: String,
+    pub offset: u32,
+    pub num_verts: u32,
+}
+
 pub static LOAD_MESH_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<JsMeshData>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
@@ -45,6 +51,9 @@ pub static CHUNKS_NEED_RELOADING: LazyLock<Mutex<Vec<String>>> =
 
 pub static APPEND_STROKE_DATAS: LazyLock<Mutex<HashMap<String, VecDeque<JsStrokeData>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
+
+pub static REMOVE_CHUNK_VERTS: LazyLock<Mutex<VecDeque<RemoveVertsData>>> =
+    LazyLock::new(|| Mutex::new(VecDeque::new()));
 
 pub static DATABASE_READY: Mutex<bool> = Mutex::new(false);
 
@@ -113,6 +122,17 @@ pub fn db_chunk_needs_reloading(chunk: String) {
     info!("Chunk needs reloading: {}", chunk);
     let mut list = CHUNKS_NEED_RELOADING.lock().unwrap();
     list.push(chunk);
+}
+
+#[wasm_bindgen]
+pub fn db_remove_verts(chunk_key: String, offset: u32, num_verts: u32) {
+    info!("Chunk needs verts removed: {}", chunk_key);
+    let mut list = REMOVE_CHUNK_VERTS.lock().unwrap();
+    list.push_back(RemoveVertsData {
+        chunk_key: chunk_key,
+        offset: offset,
+        num_verts: num_verts,
+    });
 }
 
 #[wasm_bindgen]

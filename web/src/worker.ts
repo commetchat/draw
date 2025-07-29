@@ -31,6 +31,11 @@ self.onmessage = function (e) {
     if (e.data.type == "send_strokes_to_user") {
         send_strokes_to_user(e.data.data);
     }
+
+    if (e.data.type == "delete_stroke") {
+        console.log(e.data);
+        delete_stroke(e.data.data);
+    }
 }
 
 const strokes = "stroke"
@@ -472,4 +477,57 @@ function set_initial_chunk_state(data: any) {
     console.log("Done!");
 }
 
+
+function delete_stroke(id: string) {
+    console.log("Deleting stroke: ", id);
+    const tx = db?.transaction([strokes, mesh], "readwrite");
+    const strokeStore = tx?.objectStore(strokes);
+    let request = strokeStore?.get(IDBKeyRange.only(id))
+    request!.onsuccess = (ev) => {
+        let result = (ev.target as IDBRequest).result as game.StrokeData;
+        let chunk = result.chunk_key;
+        console.log("Exists in chunk: ", chunk);
+        console.log("Mesh starts at: ", result.vertex_offset);
+        console.log("Num verts: ", result.num_verts);
+
+        let meshes = tx!.objectStore(mesh);
+        let mesh_request = meshes.get(IDBKeyRange.only(chunk));
+        mesh_request.onsuccess = (ev) => {
+            let mesh = (ev.target as IDBRequest).result as MeshData;
+            console.log("Got mesh: ", mesh);
+            let buf = mesh.vertices.buffer;
+            let view = new Float32Array(buf);
+
+            let start_index = result.vertex_offset! * 3;
+            for (var i = start_index; i < start_index + (result.num_verts! * 3); i++) {
+                view[i] = 0.0;
+            }
+
+            console.log("Replacing mesh data");
+            let new_mesh: MeshData = {
+                chunk_key: chunk,
+                vertices: new Uint8Array(view.buffer),
+                colors: mesh.colors,
+                indices: mesh.indices,
+            }
+
+            let remove = strokeStore?.delete(IDBKeyRange.only(id))
+            remove!.onsuccess = (_) => {
+                console.log("Successfully removed mesh from db")
+                let req = meshes.put(new_mesh);
+                req.onsuccess = (_) => {
+                    console.log("Successfully replaced mesh data")
+                    postMessage({
+                        type: "remove_verts",
+                        data: {
+                            chunk_key: result.chunk_key,
+                            offset: result.vertex_offset,
+                            num_verts: result.num_verts,
+                        }
+                    })
+                }
+            }
+        }
+    }
+}
 

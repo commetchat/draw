@@ -16,7 +16,7 @@ use crate::{
     chunks::{CHUNK_SIZE, ChunkEvent},
     database::{
         APPEND_STROKE_DATAS, CHUNKS_NEED_RELOADING, DATABASE_READY, LOAD_MESH_QUEUE,
-        web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData,
+        REMOVE_CHUNK_VERTS, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData,
     },
     retained_view::copy_camera::RetainedViewEvent,
     stroke::{self, Stroke, StrokeMesh},
@@ -223,6 +223,7 @@ pub fn append_stroke_system(
             stroke_events.write(ActiveStrokeEvent::DeleteActiveStroke(StrokeFinishedData {
                 timestamp: item.timestamp,
                 id_random: item.id_random,
+                owner: item.owner_id,
                 stroke_origin: Vec2 {
                     x: item.origin_x,
                     y: item.origin_y,
@@ -309,6 +310,63 @@ pub fn update_chunk_system(
     }
 
     let b = now();
+}
+
+pub fn remove_chunk_verts_system(
+    mut chunks: Query<(&mut Chunk, &mut Mesh2d)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut render_events: EventWriter<RetainedViewEvent>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+) {
+    let ready = DATABASE_READY.lock().unwrap();
+    if *ready == false {
+        return;
+    }
+
+    let mut changed = false;
+
+    let mut queue = REMOVE_CHUNK_VERTS.lock().unwrap();
+
+    while let Some(item) = queue.pop_front() {
+        info!("Removing verts from chunk!");
+        for chunk in chunks.iter_mut() {
+            if chunk.0.chunk_id != item.chunk_key {
+                continue;
+            }
+
+            if let Some(mesh) = meshes.get_mut(chunk.1.id()) {
+                let mut verts = match (mesh.attribute(Mesh::ATTRIBUTE_POSITION)) {
+                    Some(verts) => match (verts) {
+                        VertexAttributeValues::Float32x3(items) => items.clone(),
+                        _ => {
+                            continue;
+                        }
+                    },
+                    None => continue,
+                };
+
+                let num_verts = verts.len();
+                if verts.len() < usize::try_from(item.offset + item.num_verts).unwrap() {
+                    info!("Not enough verts to remove!");
+                    continue;
+                }
+
+                for i in 0..item.num_verts {
+                    let index = item.offset + i;
+                    verts[index as usize] = [0.0, 0.0, 0.0];
+                }
+
+                info!("Removed mesh!");
+
+                mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts);
+                changed = true;
+            }
+        }
+    }
+
+    if changed {
+        render_events.write(RetainedViewEvent::UpdateFrame);
+    }
 }
 
 fn handle_queue(mesh: &mut Mesh, queue: &mut VecDeque<JsMeshData>) {

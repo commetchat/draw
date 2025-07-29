@@ -120,6 +120,7 @@ pub fn paintbrush_system(
                                 stroke_origin: current.stroke_origin,
                                 timestamp: current.timestamp,
                                 id_random: current.id_random,
+                                owner: None,
                             },
                         ));
                     }

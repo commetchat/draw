@@ -6,7 +6,8 @@ use bevy::{
 
 use crate::{
     chunks::chunk::{
-        append_stroke_system, chunk_draw_system, chunk_spawn_system, update_chunk_system,
+        append_stroke_system, chunk_draw_system, chunk_spawn_system, remove_chunk_verts_system,
+        update_chunk_system,
     },
     utils::DEBUG_DRAW,
 };
@@ -35,6 +36,7 @@ impl Plugin for ChunksPlugin {
         app.add_systems(Update, update_chunk_system);
         app.add_systems(Update, chunk_draw_system);
         app.add_systems(Update, append_stroke_system);
+        app.add_systems(Update, remove_chunk_verts_system);
         app.add_systems(
             PostUpdate,
             show_chunks.after(TransformSystem::TransformPropagate),

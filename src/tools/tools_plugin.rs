@@ -11,6 +11,7 @@ use crate::{
         paintbrush::{
             ToolPaintBrush, paintbrush_gizmo_system, paintbrush_system, paintbrush_ui_system,
         },
+        undo::{store_undo_strokes_system, undo_ui_system},
     },
     ui::ui_messages::PaintbrushArgs,
 };
@@ -29,6 +30,8 @@ impl Plugin for ToolsPlugin {
         app.add_systems(Update, color_picker_system);
 
         app.add_systems(Update, color_picker_ui_system);
+        app.add_systems(Update, store_undo_strokes_system);
+        app.add_systems(Update, undo_ui_system);
     }
 }
 
