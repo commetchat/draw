@@ -79,6 +79,7 @@ async function initDb(instance_id: string) {
             })
 
             objectStore.createIndex("chunk_key", "chunk_key", { unique: false });
+            objectStore.createIndex("id_random", "id_random", { unique: false });
             objectStore.createIndex("owner_id", "owner_id", { unique: false });
             objectStore.createIndex("timestamp", "timestamp", { unique: false });
 
@@ -182,6 +183,8 @@ function store_multiple_strokes(items: [game.StrokeData]) {
                 }
             }
 
+            console.log("Inserting stroke with id: ", data.id);
+
             let result = {
                 id: data.id,
                 id_random: data.id_random,
@@ -268,7 +271,7 @@ function send_stroke_index_to_user(userid: string, index: number, count: number)
 
 
 
-    var cursorRequest = store!.index('timestamp').openCursor(null, 'next');
+    var cursorRequest = store!.index('id_random').openCursor(null, 'next');
     let has_advanced = false;
 
     cursorRequest.onsuccess = function (e) {
