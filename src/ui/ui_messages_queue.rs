@@ -4,7 +4,7 @@ use std::{
 };
 
 use bevy::{
-    ecs::event::{EventReader, EventWriter},
+    ecs::event::EventWriter,
     log::info,
 };
 use wasm_bindgen::prelude::wasm_bindgen;

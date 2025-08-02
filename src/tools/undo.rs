@@ -3,13 +3,10 @@ use std::sync::{LazyLock, Mutex};
 use bevy::{
     ecs::event::{EventReader, EventWriter},
     log::info,
-    math::{Vec2, VectorSpace},
 };
 
 use crate::{
     active_strokes::active_stroke::{ActiveStrokeEvent, RemoveStrokeEvent},
-    database::web_database::delete_stroke,
-    stroke::StrokeMetadata,
     ui::ui_messages::{ReceivedUIMessage, UIMessage},
 };
 static UNDO_QUEUE: LazyLock<Mutex<Vec<(f64, u32)>>> = LazyLock::new(|| Mutex::new(Vec::new()));

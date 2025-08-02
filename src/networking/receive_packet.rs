@@ -6,7 +6,7 @@ use std::{
 use bevy::{ecs::event::EventWriter, log::info};
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::networking::packet::{PacketData, ReceivedPacket, parse_packet};
+use crate::networking::packet::{ReceivedPacket, parse_packet};
 
 pub static PACKET_QUEUE: LazyLock<Mutex<VecDeque<(String, Vec<u8>)>>> =
     LazyLock::new(|| Mutex::new(VecDeque::new()));

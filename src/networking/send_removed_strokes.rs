@@ -1,25 +1,21 @@
 use bevy::{
-    ecs::{entity::Entity, event::EventReader, system::Query},
+    ecs::event::EventReader,
     log::info,
 };
 
 use crate::{
-    active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent},
+    active_strokes::active_stroke::RemoveStrokeEvent,
     networking::{
         Networking,
         packet::PacketData,
-        packets::{
-            new_point::NewPointPacketData, stroke_complete::StrokeCompleteData,
-            stroke_removed::StrokeRemovedPacket,
-        },
+        packets::stroke_removed::StrokeRemovedPacket,
     },
-    stroke::{Stroke, StrokeData, StrokeMetadata},
 };
 
 pub fn send_removed_strokes_system(mut events: EventReader<RemoveStrokeEvent>) {
     for event in events.read() {
         // Dont send event which was sent to us
-        if (event.owner.is_some()) {
+        if event.owner.is_some() {
             return;
         }
 

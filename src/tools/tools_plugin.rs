@@ -1,7 +1,6 @@
 use bevy::{
     app::{Plugin, Startup, Update},
-    ecs::{component::Component, schedule::IntoScheduleConfigs, system::Commands},
-    math::Vec2,
+    ecs::{component::Component, system::Commands},
     utils::default,
 };
 

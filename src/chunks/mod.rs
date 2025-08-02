@@ -1,5 +1,5 @@
 use bevy::{
-    color::palettes::css::{BLUE, GREEN, PURPLE, RED},
+    color::palettes::css::{BLUE, PURPLE},
     prelude::*,
     window::PrimaryWindow,
 };
@@ -62,7 +62,7 @@ pub fn position_to_chunk_id(position: Vec2) -> String {
 
 fn show_chunks(
     mut camera_query: Single<(&Camera, &GlobalTransform, &mut ChunkController)>,
-    mut window: Single<&mut Window, With<PrimaryWindow>>,
+    window: Single<&mut Window, With<PrimaryWindow>>,
     mut events: EventWriter<ChunkEvent>,
     mut gizmos: Gizmos,
 ) {
@@ -135,7 +135,7 @@ fn show_chunks(
         position.x += 0.5 * CHUNK_SIZE * scale;
     }
 
-    let mut position = Vec2 { x: 0.0, y: 0.0 };
+    let position = Vec2 { x: 0.0, y: 0.0 };
 
     for id in camera_query.2.loaded_chunks.iter() {
         if visible_chunk_ids

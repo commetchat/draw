@@ -2,10 +2,9 @@ use std::collections::VecDeque;
 
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::css::BLUE,
     prelude::*,
     render::{
-        mesh::{self, Indices, VertexAttributeValues},
+        mesh::{Indices, VertexAttributeValues},
         view::{NoFrustumCulling, RenderLayers},
     },
 };
@@ -19,7 +18,7 @@ use crate::{
         REMOVE_CHUNK_VERTS, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData,
     },
     retained_view::copy_camera::RetainedViewEvent,
-    stroke::{self, Stroke, StrokeMesh},
+    stroke::StrokeMesh,
     utils::{DEBUG_DRAW, now},
 };
 
@@ -135,7 +134,7 @@ pub fn append_stroke_system(
 
     let mut map = APPEND_STROKE_DATAS.lock().unwrap();
 
-    for mut chunk in chunks.iter_mut() {
+    for chunk in chunks.iter_mut() {
         let queue = map.get_mut(&chunk.0.chunk_id);
 
         let queue = match queue {
@@ -157,8 +156,8 @@ pub fn append_stroke_system(
                 }
             };
 
-            let mut verts = match (mesh.attribute(Mesh::ATTRIBUTE_POSITION)) {
-                Some(verts) => match (verts) {
+            let verts = match mesh.attribute(Mesh::ATTRIBUTE_POSITION) {
+                Some(verts) => match verts {
                     VertexAttributeValues::Float32x3(items) => items,
                     _ => {
                         continue;
@@ -167,8 +166,8 @@ pub fn append_stroke_system(
                 None => continue,
             };
 
-            let mut colors = match (mesh.attribute(Mesh::ATTRIBUTE_COLOR)) {
-                Some(verts) => match (verts) {
+            let colors = match mesh.attribute(Mesh::ATTRIBUTE_COLOR) {
+                Some(verts) => match verts {
                     VertexAttributeValues::Float32x4(items) => items,
                     _ => {
                         continue;
@@ -177,7 +176,7 @@ pub fn append_stroke_system(
                 None => continue,
             };
 
-            let mut indices = match mesh.indices() {
+            let indices = match mesh.indices() {
                 Some(indices) => match indices {
                     Indices::U32(items) => items,
                     _ => {
@@ -245,7 +244,7 @@ pub fn update_chunk_system(
     mut chunks: Query<(&mut Chunk, &mut Mesh2d)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut render_events: EventWriter<RetainedViewEvent>,
-    mut materials: ResMut<Assets<CustomMaterial>>,
+    materials: ResMut<Assets<CustomMaterial>>,
 ) {
     let ready = DATABASE_READY.lock().unwrap();
     if *ready == false {
@@ -260,7 +259,7 @@ pub fn update_chunk_system(
         let i = needs_reloading.iter().position(|r| r == &chunk.0.chunk_id);
 
         if chunk.0.has_requested_db_chunks == false || i.is_some() {
-            if (i.is_some()) {
+            if i.is_some() {
                 needs_reloading.remove(i.unwrap());
                 info!("Reloading chunk: {}", chunk.0.chunk_id);
             }
@@ -279,7 +278,7 @@ pub fn update_chunk_system(
     };
 
     for mut chunk in chunks.iter_mut() {
-        if (chunk.0.finished_loading) {
+        if chunk.0.finished_loading {
             continue;
         }
 
@@ -290,7 +289,7 @@ pub fn update_chunk_system(
             None => continue,
         };
 
-        if (queue.is_empty()) {
+        if queue.is_empty() {
             continue;
         }
 
@@ -316,7 +315,7 @@ pub fn remove_chunk_verts_system(
     mut chunks: Query<(&mut Chunk, &mut Mesh2d)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut render_events: EventWriter<RetainedViewEvent>,
-    mut materials: ResMut<Assets<CustomMaterial>>,
+    materials: ResMut<Assets<CustomMaterial>>,
 ) {
     let ready = DATABASE_READY.lock().unwrap();
     if *ready == false {
@@ -335,8 +334,8 @@ pub fn remove_chunk_verts_system(
             }
 
             if let Some(mesh) = meshes.get_mut(chunk.1.id()) {
-                let mut verts = match (mesh.attribute(Mesh::ATTRIBUTE_POSITION)) {
-                    Some(verts) => match (verts) {
+                let mut verts = match mesh.attribute(Mesh::ATTRIBUTE_POSITION) {
+                    Some(verts) => match verts {
                         VertexAttributeValues::Float32x3(items) => items.clone(),
                         _ => {
                             continue;
@@ -370,7 +369,7 @@ pub fn remove_chunk_verts_system(
 }
 
 fn handle_queue(mesh: &mut Mesh, queue: &mut VecDeque<JsMeshData>) {
-    let mut stroke = match queue.pop_front() {
+    let stroke = match queue.pop_front() {
         Some(stroke) => stroke,
         None => return,
     };

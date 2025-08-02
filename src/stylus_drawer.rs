@@ -16,7 +16,7 @@ impl Plugin for StylusDrawer {
 fn show_gizmo(
     mut events: EventReader<StylusEvent>,
     camera_query: Single<(&Camera, &GlobalTransform), With<TargetCamera>>,
-    mut window: Single<&mut Window>,
+    window: Single<&mut Window>,
     mut gizmos: Gizmos,
 ) {
     let (camera, camera_transform) = *camera_query;

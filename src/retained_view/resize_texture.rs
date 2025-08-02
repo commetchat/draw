@@ -1,6 +1,5 @@
 use bevy::{
     asset::Assets,
-    color::Color,
     ecs::{
         component::Component,
         event::EventWriter,
@@ -14,7 +13,7 @@ use bevy::{
 };
 
 use crate::retained_view::{
-    RetainedTexture, RetainedView, ViewportTextureMaterial, copy_camera::RetainedViewEvent,
+    RetainedTexture, ViewportTextureMaterial, copy_camera::RetainedViewEvent,
 };
 
 #[derive(Component, Default)]
@@ -26,9 +25,9 @@ pub struct TextureResizer {
 pub fn resize_texture_system(
     mut retained_camera: Single<(&mut TextureResizer, &mut Camera)>,
     mut images: ResMut<Assets<Image>>,
-    mut window: Single<&mut Window>,
+    window: Single<&mut Window>,
     mut materials: ResMut<Assets<ViewportTextureMaterial>>,
-    mut texture: ResMut<RetainedTexture>,
+    texture: ResMut<RetainedTexture>,
 
     mut render_events: EventWriter<RetainedViewEvent>,
 ) {

@@ -1,6 +1,5 @@
 //! Displays touch presses, releases, and cancels.
 
-use std::ops::Add;
 
 use bevy::{prelude::*, render::view::RenderLayers};
 

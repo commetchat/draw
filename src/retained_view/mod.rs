@@ -1,11 +1,9 @@
 use bevy::{
     asset::RenderAssetUsages,
-    color::palettes::css::GREEN,
     prelude::*,
     render::{
-        mesh::PlaneMeshBuilder,
         render_resource::{
-            AsBindGroup, Extent3d, ShaderRef, Texture, TextureDescriptor, TextureDimension,
+            AsBindGroup, Extent3d, ShaderRef, TextureDimension,
             TextureFormat, TextureUsages,
         },
         view::RenderLayers,

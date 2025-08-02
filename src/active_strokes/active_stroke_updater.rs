@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{Assets, RenderAssetUsages},
+    asset::Assets,
     color::{ColorToComponents, Saturation},
     ecs::{
         entity::Entity,
@@ -8,15 +8,10 @@ use bevy::{
     },
     log::info,
     math::Vec2,
-    render::{
-        mesh::{Indices, Mesh, Mesh2d},
-        view::{NoFrustumCulling, RenderLayers},
-    },
-    sprite::MeshMaterial2d,
+    render::mesh::{Indices, Mesh, Mesh2d},
 };
 
 use crate::{
-    CustomMaterial, RENDER_LAYER_ACTIVE_STROKES,
     active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent},
     database::{
         web_database::{delete_stroke, store_multiple_strokes},

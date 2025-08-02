@@ -1,4 +1,3 @@
-use std::ops::Deref;
 
 use bevy::{
     color::{Color, ColorToPacked, Srgba},
@@ -8,9 +7,7 @@ use binary_util::ByteReader;
 
 use crate::{
     active_strokes::active_stroke::NewPointData,
-    load_file::read_stroke,
     networking::{packet::PacketData, packets::Packet},
-    stroke::{Stroke, StrokeData},
 };
 
 #[derive(Clone)]

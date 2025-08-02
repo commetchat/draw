@@ -4,25 +4,20 @@
 use bevy::sprite::{Wireframe2dConfig, Wireframe2dPlugin};
 
 use bevy::{
-    asset::RenderAssetUsages,
     prelude::*,
     reflect::TypePath,
     render::{
-        mesh::{self},
         render_resource::{AsBindGroup, ShaderRef},
         view::RenderLayers,
     },
     sprite::{Material2d, Material2dPlugin},
-    ui::UiPlugin,
     window::WindowResolution,
 };
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use iyes_perf_ui::{
     PerfUiPlugin,
-    entries::{
-        PerfUiFixedTimeEntries, PerfUiFramerateEntries, PerfUiSystemEntries, PerfUiWindowEntries,
-    },
-    prelude::{PerfUiDefaultEntries, PerfUiEntryEntityCount, PerfUiEntryFPS, PerfUiEntryFrameTime},
+    entries::PerfUiFramerateEntries,
+    prelude::PerfUiEntryEntityCount,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -41,7 +36,6 @@ use crate::{
         copy_camera::TargetCamera,
     },
     stroke::Strokes,
-    stylus_drawer::StylusDrawer,
     stylus_input::StylusInput,
     tools::tools_plugin::ToolsPlugin,
     ui::ui_plugin::AppUIPlugin,

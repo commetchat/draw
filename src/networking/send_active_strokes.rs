@@ -1,4 +1,4 @@
-use bevy::ecs::{entity::Entity, event::EventReader, system::Query};
+use bevy::ecs::{event::EventReader, system::Query};
 
 use crate::{
     active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent},
@@ -18,7 +18,7 @@ pub fn send_active_strokes_system(
         match event {
             ActiveStrokeEvent::NewPoint(new_point_data) => {
                 // Dont send events which were sent to us!
-                if (new_point_data.owner.is_some()) {
+                if new_point_data.owner.is_some() {
                     continue;
                 }
 

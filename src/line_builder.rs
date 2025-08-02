@@ -5,7 +5,6 @@ use std::f32::consts::PI;
 
 use bevy::{
     color::Color,
-    log::info,
     math::{
         FloatExt, Rect, Vec2,
         ops::{abs, atan2},

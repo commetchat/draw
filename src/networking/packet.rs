@@ -3,17 +3,11 @@ use std::io::ErrorKind;
 use bevy::{ecs::event::Event, log::info};
 use binary_util::{ByteReader, ByteWriter};
 
-use crate::{
-    active_strokes::active_stroke::RemoveStrokeEvent,
-    load_file::read_stroke,
-    networking::packets::{
+use crate::networking::packets::{
         Packet, new_point::NewPointPacketData, stroke_complete::StrokeCompleteData,
         stroke_removed::StrokeRemovedPacket,
-    },
-    stroke::{Stroke, StrokeData},
-};
+    };
 
-use crate::networking::packets::stroke_complete;
 
 #[repr(u8)]
 pub enum PacketType {

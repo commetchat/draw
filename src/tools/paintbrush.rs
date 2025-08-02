@@ -1,5 +1,5 @@
 use bevy::{
-    color::{Color, LinearRgba},
+    color::Color,
     ecs::{
         component::Component,
         entity::Entity,
@@ -8,10 +8,9 @@ use bevy::{
         system::{Commands, Single},
     },
     gizmos::gizmos::Gizmos,
-    log::{info, tracing_subscriber::fmt::time},
+    log::info,
     math::Vec2,
     render::camera::Camera,
-    text::cosmic_text::ttf_parser::post,
     transform::components::GlobalTransform,
     window::Window,
 };

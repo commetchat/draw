@@ -1,10 +1,6 @@
 use binary_util::ByteReader;
 
-use crate::{
-    load_file::read_stroke,
-    networking::{packet::PacketData, packets::Packet},
-    stroke::{Stroke, StrokeData},
-};
+use crate::networking::{packet::PacketData, packets::Packet};
 
 #[derive(Clone)]
 pub struct StrokeRemovedPacket {

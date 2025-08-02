@@ -1,20 +1,15 @@
-use std::sync::Mutex;
 
 use bevy::{
-    app::Plugin,
-    color::ColorToComponents,
-    log::{info, tracing_subscriber::fmt::time},
+    log::info,
     math::Vec2,
 };
 use binary_util::ByteReader;
-use safe_transmute::{SingleManyGuard, transmute_many, transmute_to_bytes};
+use safe_transmute::transmute_to_bytes;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    BACKGROUND,
     database::{web_database::set_initial_chunk_state, web_stroke_data::JsStrokeData},
-    line_builder::{LineBuilder, LineCapMode, LineJointMode},
-    mesh_conversion::{stroke_to_mesh, timestamp_to_z_offset},
+    mesh_conversion::stroke_to_mesh,
     stroke::{Stroke, StrokeData, StrokeMetadata},
 };
 
@@ -65,7 +60,7 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
             for _ in 0..num_strokes {
                 let stroke_data = read_stroke(&mut reader, &owner_id)?;
 
-                if (stroke_data.metadata.timestamp < 1749429383.719) {
+                if stroke_data.metadata.timestamp < 1749429383.719 {
                     continue;
                 }
 

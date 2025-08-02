@@ -1,29 +1,20 @@
-use std::{ops::Deref, path::Path};
+use std::ops::Deref;
 
 use bevy::{
-    asset::Assets,
     ecs::{
         component::Component,
         entity::Entity,
         event::EventReader,
         observer::Trigger,
-        query::With,
-        system::{Commands, ResMut, Single},
+        system::{Commands, Single},
     },
-    gizmos::gizmos::Gizmos,
-    image::Image,
     log::info,
     math::Vec2,
-    render::{
-        camera::Camera,
-        view::screenshot::{Screenshot, ScreenshotCaptured, save_to_disk},
-    },
-    transform::components::GlobalTransform,
+    render::view::screenshot::{Screenshot, ScreenshotCaptured},
     window::Window,
 };
 
 use crate::{
-    retained_view::{RetainedTexture, copy_camera::TargetCamera},
     stylus_input::StylusEvent,
     tools::tools_plugin::ActiveTool,
     ui::{
@@ -92,7 +83,7 @@ pub fn handle_image(position: Vec2) -> impl FnMut(Trigger<ScreenshotCaptured>) {
 }
 
 pub fn color_picker_ui_system(
-    mut picker: Single<(Entity, &mut ToolColorPicker)>,
+    picker: Single<(Entity, &mut ToolColorPicker)>,
     mut events: EventReader<ReceivedUIMessage>,
     mut commands: Commands,
 ) {

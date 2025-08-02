@@ -1,17 +1,11 @@
 use bevy::{
-    color::ColorToComponents,
     ecs::event::{EventReader, EventWriter},
     log::info,
 };
 
 use crate::{
-    BACKGROUND,
     active_strokes::active_stroke::RemoveStrokeEvent,
-    database::{web_database::store_multiple_strokes, web_stroke_data::JsStrokeData},
-    line_builder::LineBuilder,
-    mesh_conversion::{stroke_to_mesh, timestamp_to_z_offset},
     networking::packet::ReceivedPacket,
-    stroke::{Stroke, StrokeMesh},
 };
 
 pub fn handle_removed_strokes(

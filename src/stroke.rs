@@ -1,6 +1,6 @@
 use bevy::{
     app::{App, Plugin},
-    color::{Color, ColorToPacked, LinearRgba, Srgba},
+    color::{Color, ColorToPacked, Srgba},
     ecs::event::Event,
     math::Vec2,
 };

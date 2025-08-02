@@ -3,7 +3,7 @@ use binary_util::ByteReader;
 use crate::{
     load_file::read_stroke,
     networking::{packet::PacketData, packets::Packet},
-    stroke::{Stroke, StrokeData},
+    stroke::Stroke,
 };
 
 #[derive(Clone)]

@@ -1,10 +1,8 @@
-use bevy::{log::info, math::Vec2};
-use binary_util::{ByteReader, ByteWriter};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     chunks::position_to_chunk_id,
-    stroke::{Stroke, StrokeData, StrokeMesh, StrokeMetadata, StrokeType},
+    stroke::Stroke,
 };
 
 #[wasm_bindgen(getter_with_clone, js_name = "StrokeData")]

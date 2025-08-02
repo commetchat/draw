@@ -57,7 +57,7 @@ pub fn spawn_strokes_system(
                 mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
                 mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
 
-                let mut stroke = ActiveStroke {
+                let stroke = ActiveStroke {
                     timestamp: new_point_data.timestamp,
                     id_random: new_point_data.id_random,
                     stroke_origin: new_point_data.stroke_origin,

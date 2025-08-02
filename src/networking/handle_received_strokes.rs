@@ -1,12 +1,10 @@
-use bevy::{color::ColorToComponents, ecs::event::EventReader, log::info};
+use bevy::ecs::event::EventReader;
 
 use crate::{
-    BACKGROUND,
     database::{web_database::store_multiple_strokes, web_stroke_data::JsStrokeData},
-    line_builder::LineBuilder,
-    mesh_conversion::{stroke_to_mesh, timestamp_to_z_offset},
+    mesh_conversion::stroke_to_mesh,
     networking::packet::ReceivedPacket,
-    stroke::{Stroke, StrokeMesh},
+    stroke::StrokeMesh,
 };
 
 pub fn handle_received_strokes_system(mut events: EventReader<ReceivedPacket>) {

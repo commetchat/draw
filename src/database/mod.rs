@@ -1,36 +1,23 @@
 use std::{
     collections::VecDeque,
     sync::{LazyLock, Mutex},
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use bevy::{
-    app::{App, Plugin, Update},
-    asset::{Assets, RenderAssetUsages},
-    color::{Color, ColorToComponents, palettes::css::RED},
-    ecs::{
-        event::EventReader,
-        system::{Commands, ResMut},
-    },
+    app::{App, Plugin},
+    ecs::event::EventReader,
     log::info,
     platform::collections::HashMap,
-    render::mesh::{self, Mesh, Mesh2d},
-    sprite::MeshMaterial2d,
-    transform::components::Transform,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    CustomMaterial,
-    chunks::{ChunkEvent, position_to_chunk_id},
     database::{
-        web_database::{store_multiple_strokes, store_stroke},
+        web_database::store_multiple_strokes,
         web_stroke_data::{JsMeshData, JsStrokeData},
     },
-    line_builder::{LineBuilder, LineCapMode, LineJointMode},
-    stroke::{Stroke, StrokeEvent},
+    stroke::StrokeEvent,
     ui::{ui_messages::UIMessage::GameReady, ui_messages_queue::send_ui_message},
-    utils::now,
 };
 
 pub mod web_database;
