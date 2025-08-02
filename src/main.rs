@@ -15,9 +15,7 @@ use bevy::{
 };
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use iyes_perf_ui::{
-    PerfUiPlugin,
-    entries::PerfUiFramerateEntries,
-    prelude::PerfUiEntryEntityCount,
+    PerfUiPlugin, entries::PerfUiFramerateEntries, prelude::PerfUiEntryEntityCount,
 };
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -31,6 +29,7 @@ use crate::{
     database::Database,
     lerp_transform::{LerpTransformPlugin, TargetTransform},
     networking::networking_plugin::NetworkingPlugin,
+    player_sprite::player_sprite_plugin::PlayerSpritePlugin,
     retained_view::{
         RetainedViewPlugin, camera_change_detection::CameraChangeDetector,
         copy_camera::TargetCamera,
@@ -52,6 +51,7 @@ pub mod line_builder;
 pub mod load_file;
 pub mod mesh_conversion;
 pub mod networking;
+pub mod player_sprite;
 pub mod retained_view;
 pub mod stroke;
 pub mod stylus_drawer;
@@ -70,6 +70,8 @@ const RENDER_LAYER_BATCH_STROKES: usize = 1;
 const RENDER_LAYER_RETAINED_IMAGE: usize = 2;
 const RENDER_LAYER_ACTIVE_STROKES: usize = 3;
 const RENDER_LAYER_HUD: usize = 4;
+const RENDER_LAYER_SPRITES: usize = 5;
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = gameUtils, js_name=init)]
@@ -103,6 +105,7 @@ fn main() {
     // .add_plugins(StylusDrawer)
     .add_plugins(ToolsPlugin)
     .add_plugins(ActiveStrokesPlugin)
+    .add_plugins(PlayerSpritePlugin)
     .add_plugins(AppUIPlugin)
     .add_plugins(Database)
     .add_plugins(RetainedViewPlugin)
@@ -158,10 +161,15 @@ fn setup(mut commands: Commands) {
             RENDER_LAYER_HUD,
             RENDER_LAYER_ACTIVE_STROKES,
             RENDER_LAYER_RETAINED_IMAGE,
+            RENDER_LAYER_SPRITES,
         ]),
         TargetCamera {},
         CameraChangeDetector::default(),
-        TargetTransform::default(),
+        TargetTransform {
+            transform: Transform::default(),
+            speed: 20.0,
+            do_scale: true,
+        },
         ChunkController::default(),
         TouchCameraController::default(),
     ));

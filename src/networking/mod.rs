@@ -7,16 +7,20 @@ use crate::networking::{
     packet::{PacketData, write_packet},
 };
 
-mod connected_peers;
+pub mod connected_peers;
 mod handle_new_point_packet;
+mod handle_player_state;
 mod handle_received_strokes;
 mod handle_removed_strokes;
+pub mod network_owned;
 pub mod networking_plugin;
-mod packet;
-mod packets;
+pub mod packet;
+pub mod packets;
 mod receive_packet;
 mod send_active_strokes;
+mod send_player_state;
 mod send_removed_strokes;
+
 pub struct Networking;
 
 #[wasm_bindgen]

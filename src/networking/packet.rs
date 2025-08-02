@@ -3,17 +3,20 @@ use std::io::ErrorKind;
 use bevy::{ecs::event::Event, log::info};
 use binary_util::{ByteReader, ByteWriter};
 
-use crate::networking::packets::{
+use crate::{
+    networking::packets::{
         Packet, new_point::NewPointPacketData, stroke_complete::StrokeCompleteData,
         stroke_removed::StrokeRemovedPacket,
-    };
-
+    },
+    player_sprite::get_player_state::PlayerStateData,
+};
 
 #[repr(u8)]
 pub enum PacketType {
     StrokeComplete = 1,
     NewPoint = 2,
     StrokeRemoved = 3,
+    PlayerState = 4,
 }
 
 impl TryFrom<u16> for PacketType {
@@ -24,6 +27,7 @@ impl TryFrom<u16> for PacketType {
             x if x == PacketType::StrokeComplete as u16 => Ok(PacketType::StrokeComplete),
             x if x == PacketType::NewPoint as u16 => Ok(PacketType::NewPoint),
             x if x == PacketType::StrokeRemoved as u16 => Ok(PacketType::StrokeRemoved),
+            x if x == PacketType::PlayerState as u16 => Ok(PacketType::PlayerState),
             _ => Err(()),
         }
     }
@@ -33,6 +37,7 @@ pub enum PacketData {
     StrokeComplete(StrokeCompleteData),
     NewPoint(NewPointPacketData),
     StrokeRemoved(StrokeRemovedPacket),
+    PlayerState(PlayerStateData),
 }
 
 #[derive(Event)]
@@ -65,6 +70,7 @@ pub fn parse_packet(data: Vec<u8>) -> Result<PacketData, std::io::Error> {
         PacketType::StrokeComplete => StrokeCompleteData::parse(&mut reader),
         PacketType::NewPoint => NewPointPacketData::parse(&mut reader),
         PacketType::StrokeRemoved => StrokeRemovedPacket::parse(&mut reader),
+        PacketType::PlayerState => PlayerStateData::parse(&mut reader),
     };
 
     match packet {
@@ -78,6 +84,7 @@ pub fn write_packet(writer: &mut ByteWriter, packet: &PacketData) -> Result<(), 
         PacketData::StrokeComplete(_) => PacketType::StrokeComplete,
         PacketData::NewPoint(_) => PacketType::NewPoint,
         PacketData::StrokeRemoved(stroke_removed_packet) => PacketType::StrokeRemoved,
+        PacketData::PlayerState(player_state_data) => PacketType::PlayerState,
     };
 
     writer.write_u16(packet_type as u16)?;
@@ -86,5 +93,6 @@ pub fn write_packet(writer: &mut ByteWriter, packet: &PacketData) -> Result<(), 
         PacketData::StrokeComplete(stroke_complete_data) => stroke_complete_data.write(writer),
         PacketData::NewPoint(new_point_packet_data) => new_point_packet_data.write(writer),
         PacketData::StrokeRemoved(stroke_removed_packet) => stroke_removed_packet.write(writer),
+        PacketData::PlayerState(player_state_data) => player_state_data.write(writer),
     }
 }
