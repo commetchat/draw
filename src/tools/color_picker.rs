@@ -8,6 +8,7 @@ use bevy::{
         observer::Trigger,
         system::{Commands, Single},
     },
+    input::touch::{TouchInput, TouchPhase},
     log::info,
     math::Vec2,
     render::view::screenshot::{Screenshot, ScreenshotCaptured},
@@ -29,6 +30,7 @@ pub struct ToolColorPicker {}
 pub fn color_picker_system(
     mut events: EventReader<StylusEvent>,
     window: Single<&mut Window>,
+    mut touch_events: EventReader<TouchInput>,
     tool: Single<(&mut ToolColorPicker, &mut ActiveTool)>,
     mut commands: Commands,
 ) {
@@ -55,6 +57,28 @@ pub fn color_picker_system(
         commands
             .spawn(Screenshot::primary_window())
             .observe(handle_image(pos));
+        return;
+    }
+
+    for event in touch_events.read() {
+        if event.phase != TouchPhase::Started {
+            continue;
+        };
+
+        let window_size = Vec2 {
+            x: window.resolution.width(),
+            y: window.resolution.height(),
+        };
+
+        let pos = event.position;
+        let pos = pos / window_size;
+
+        info!("Picking color at: {}", pos);
+
+        commands
+            .spawn(Screenshot::primary_window())
+            .observe(handle_image(pos));
+        return;
     }
 }
 
