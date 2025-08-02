@@ -38,7 +38,7 @@ pub fn color_picker_system(
         let event = match event {
             StylusEvent::PointerUp(pointer_data) => pointer_data,
             _ => {
-                return;
+                continue;
             }
         };
 

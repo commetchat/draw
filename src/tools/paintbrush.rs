@@ -79,11 +79,18 @@ pub fn paintbrush_system(
 
         let world_pos = match world_pos {
             Ok(pos) => pos,
-            Err(_) => return,
+            Err(_) => {
+                info!("Failed to get world pos!");
+                continue;
+            }
         };
 
         match event {
             StylusEvent::PointerDown(_) => {
+                if active_paintbrush.0.current_stroke_info.is_some() {
+                    finish_stroke(&mut stroke_events, &mut active_paintbrush.0);
+                }
+
                 active_paintbrush.0.is_down = true;
                 let timestamp = get_system_time();
                 let id_random = get_random_uint32();
@@ -109,30 +116,14 @@ pub fn paintbrush_system(
                 info!("Starting new stroke!: {} {}", timestamp, id_random);
             }
             StylusEvent::PointerUp(_) => {
-                active_paintbrush.0.is_down = false;
-                info!("Stroke finished!");
-
-                match &active_paintbrush.0.current_stroke_info {
-                    Some(current) => {
-                        stroke_events.write(ActiveStrokeEvent::StrokeFinished(
-                            StrokeFinishedData {
-                                stroke_origin: current.stroke_origin,
-                                timestamp: current.timestamp,
-                                id_random: current.id_random,
-                                owner: None,
-                            },
-                        ));
-                    }
-                    None => (),
-                }
-
-                active_paintbrush.0.current_stroke_info = None;
+                info!("Got pointer up!");
+                finish_stroke(&mut stroke_events, &mut active_paintbrush.0);
             }
             StylusEvent::PointerMove(_) => match &active_paintbrush.0.current_stroke_info {
                 Some(current) => {
                     let delta = active_paintbrush.0.last_pos_screenspace - data.position;
                     if delta.length() < 2.0 {
-                        return;
+                        continue;
                     }
 
                     stroke_events.write(ActiveStrokeEvent::NewPoint(NewPointData {
@@ -154,6 +145,27 @@ pub fn paintbrush_system(
         active_paintbrush.0.last_pos = world_pos;
         active_paintbrush.0.last_pressure = data.pressure;
     }
+}
+
+fn finish_stroke(stroke_events: &mut EventWriter<ActiveStrokeEvent>, stroke: &mut ToolPaintBrush) {
+    stroke.is_down = false;
+    info!("Stroke finished!");
+
+    match &stroke.current_stroke_info {
+        Some(current) => {
+            stroke_events.write(ActiveStrokeEvent::StrokeFinished(StrokeFinishedData {
+                stroke_origin: current.stroke_origin,
+                timestamp: current.timestamp,
+                id_random: current.id_random,
+                owner: None,
+            }));
+        }
+        None => {
+            info!("No current stroke info!");
+        }
+    }
+
+    stroke.current_stroke_info = None;
 }
 
 pub fn paintbrush_ui_system(

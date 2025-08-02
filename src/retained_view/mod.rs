@@ -3,8 +3,7 @@ use bevy::{
     prelude::*,
     render::{
         render_resource::{
-            AsBindGroup, Extent3d, ShaderRef, TextureDimension,
-            TextureFormat, TextureUsages,
+            AsBindGroup, Extent3d, ShaderRef, TextureDimension, TextureFormat, TextureUsages,
         },
         view::RenderLayers,
     },
@@ -99,8 +98,8 @@ fn setup(
     let mut image = Image::new_fill(
         size.clone(),
         TextureDimension::D2,
-        &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        TextureFormat::Rgba32Float,
+        &[0, 0, 0, 0, 0, 0, 0, 0],
+        TextureFormat::Rgba16Float,
         RenderAssetUsages::default(),
     );
 

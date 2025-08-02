@@ -167,26 +167,26 @@ const App: Component<AppProps> = (props) => {
     }
 
     let msg = JSON.stringify(message);
-    console.log("Passing UI Message to Game: " + msg,);
 
     try {
       game.queue_ui_message(msg);
     } catch (_) {
-      console.log("Failed to pass message to game!");
     }
   }
 
   return (
-    <div class={styles.App}>
+    <div class={styles.App}  >
+      <div class="touch-pan-x">
 
-      <header>
-        <div style={"width: 100vw; height: 100vh;  overflow: hidden;"}>
-          <canvas style={"z-index: 1; position: relative;"} id="bevy-portal"></canvas>
-        </div>
+        <header>
+          <div class='w-lvw h-svh overflow-clip'>
+            <canvas style={"z-index: 1; position: relative;"} id="bevy-portal"></canvas>
+          </div>
 
 
-        <UI callback={handleUIMessage} delegate={ui_delegate} />
-      </header>
+          <UI callback={handleUIMessage} delegate={ui_delegate} />
+        </header>
+      </div>
     </div >
   );
 };

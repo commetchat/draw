@@ -124,6 +124,7 @@ pub fn append_stroke_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut stroke_events: EventWriter<ActiveStrokeEvent>,
     mut render_events: EventWriter<RetainedViewEvent>,
+    mut chunk_events: EventWriter<ChunkEvent>,
 ) {
     let ready = DATABASE_READY.lock().unwrap();
     if *ready == false {
@@ -134,7 +135,7 @@ pub fn append_stroke_system(
 
     let mut map = APPEND_STROKE_DATAS.lock().unwrap();
 
-    for chunk in chunks.iter_mut() {
+    for mut chunk in chunks.iter_mut() {
         let queue = map.get_mut(&chunk.0.chunk_id);
 
         let queue = match queue {
@@ -207,11 +208,12 @@ pub fn append_stroke_system(
                 colors.append(&mut stroke_mesh.colors);
                 indices.append(&mut stroke_mesh.indices);
             } else {
-                info!(
-                    "Unexpected vertex count in mesh! something is not right! reloading chunk from database"
-                );
-                let mut needs_reloading = CHUNKS_NEED_RELOADING.lock().unwrap();
-                needs_reloading.push(chunk.0.chunk_id.clone());
+                info!("Unexpected vertex count in mesh! something is not right! Respawning chunk");
+                chunk_events.write(ChunkEvent::NotVisible(chunk.0.chunk_id.clone()));
+                chunk_events.write(ChunkEvent::Visible(
+                    chunk.0.chunk_id.clone(),
+                    chunk.0.position,
+                ));
             }
 
             if verts.len() == 0 {

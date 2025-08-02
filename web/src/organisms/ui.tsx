@@ -31,18 +31,29 @@ const UI: Component<UIProps> = (props) => {
     const [paintbrushWidth, setPaintbrushWidth] = createSignal(10.0);
     const [currentTool, setCurrentTool] = createSignal("Paintbrush");
 
-    console.log("Test!");
     const colorPicker = "ColorPicker";
     const paintbrush = "Paintbrush";
+    const showConsole = false;
 
     const paintColorsRgb = () => {
         let hsl = paintColorHsl();
         return hsl2rgb(hsl[0], hsl[1], hsl[2])
     }
 
+    let [getLines, setLines] = createSignal<string>("")
+
+    if (showConsole) {
+        let original = console.log;
+
+        console.log = (e) => {
+
+            let s = getLines();
+            setLines(`${e}\n` + s.substring(0, 10000));
+            original(e)
+        }
+    }
+
     props.delegate.on_received_msg = (msg) => {
-        console.log("Received message:");
-        console.log(msg);
 
         if (msg.type == "SetColor") {
             let hsl = rgb2hsl(msg.r, msg.g, msg.b);
@@ -50,7 +61,7 @@ const UI: Component<UIProps> = (props) => {
             setPaintColorHsl(hsl);
 
             setCurrentTool(paintbrush);
-            console.log("Set colors!");
+
 
             postUiMessage({
                 type: "SetTool",
@@ -67,14 +78,13 @@ const UI: Component<UIProps> = (props) => {
     }
 
     function postUiMessage(message: UIMessage) {
-        console.log(message);
+
         if (props.callback != null) {
             props.callback!(message);
         }
     };
 
     createEffect(() => {
-        console.log("Sending ui message!");
 
         if (currentTool() == paintbrush) {
             postUiMessage({
@@ -84,7 +94,6 @@ const UI: Component<UIProps> = (props) => {
                 color: paintColorsRgb()
             })
 
-            console.log(paintColorHsl());
         }
 
         if (currentTool() == colorPicker) {
@@ -152,11 +161,21 @@ const UI: Component<UIProps> = (props) => {
                 </div>
 
                 <div class="pointer-events-auto flex justify-between gap-2 absolute bottom-0 right-0 m-4 ">
-                    <md-fab aria-label="Edit" onclick={() => postUiMessage({ type: "Undo" })}>
+                    <md-fab aria-label="Edit" onclick={(e) => {
+                        e.preventDefault();
+                        return postUiMessage({ type: "Undo" });
+                    }}>
                         <md-icon slot="icon">undo</md-icon>
                     </md-fab>
                 </div>
 
+                <Show when={showConsole}>
+                    <div class='text-white text-xs w-lvh h-svh'>
+                        <textarea class='pointer-events-auto p-20 w-lvh h-1/3' disabled value={getLines()}>
+
+                        </textarea>
+                    </div>
+                </Show>
             </div >
         </div>
 
