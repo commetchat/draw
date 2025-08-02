@@ -288,16 +288,12 @@ pub fn update_chunk_system(
             continue;
         }
 
-        let queue = map.get_mut(&chunk.0.chunk_id);
+        let mesh_data = map.remove(&chunk.0.chunk_id);
 
-        let queue = match queue {
-            Some(queue) => queue,
+        let mesh_data = match mesh_data {
+            Some(mesh_data) => mesh_data,
             None => continue,
         };
-
-        if queue.is_empty() {
-            continue;
-        }
 
         let handle = chunk.1;
         let handle = &handle.0;
@@ -309,7 +305,7 @@ pub fn update_chunk_system(
             }
         };
 
-        handle_queue(mesh, queue);
+        handle_mesh_data(mesh, &mesh_data);
         render_events.write(RetainedViewEvent::UpdateFrame);
         chunk.0.finished_loading = true;
     }
@@ -374,19 +370,16 @@ pub fn remove_chunk_verts_system(
     }
 }
 
-fn handle_queue(mesh: &mut Mesh, queue: &mut VecDeque<JsMeshData>) {
-    let stroke = match queue.pop_front() {
-        Some(stroke) => stroke,
-        None => return,
-    };
-
-    if stroke.vertex_data.is_empty() || stroke.index_data.is_empty() || stroke.color_data.is_empty()
-    {
+fn handle_mesh_data(mesh: &mut Mesh, data: &JsMeshData) {
+    if data.vertex_data.is_empty() || data.index_data.is_empty() || data.color_data.is_empty() {
         return;
     }
 
-    let stroke_mesh =
-        StrokeMesh::from_bytes(stroke.vertex_data, stroke.index_data, stroke.color_data);
+    let stroke_mesh = StrokeMesh::from_bytes(
+        data.vertex_data.clone(),
+        data.index_data.clone(),
+        data.color_data.clone(),
+    );
 
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, stroke_mesh.vertices);
     mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, stroke_mesh.colors);

@@ -35,7 +35,7 @@ pub struct RemoveVertsData {
     pub num_verts: u32,
 }
 
-pub static LOAD_MESH_QUEUE: LazyLock<Mutex<HashMap<String, VecDeque<JsMeshData>>>> =
+pub static LOAD_MESH_QUEUE: LazyLock<Mutex<HashMap<String, JsMeshData>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 pub static CHUNKS_NEED_RELOADING: LazyLock<Mutex<Vec<String>>> =
@@ -100,13 +100,7 @@ pub fn db_append_mesh_data(strokes: Vec<JsStrokeData>) {
 pub fn db_on_mesh_loaded(mesh: JsMeshData) {
     let mut map = LOAD_MESH_QUEUE.lock().unwrap();
 
-    if map.contains_key(&mesh.chunk_key) == false {
-        map.insert(mesh.chunk_key.clone(), VecDeque::new());
-    }
-
-    let queue = map.get_mut(&mesh.chunk_key).unwrap();
-
-    queue.push_back(mesh);
+    map.insert(mesh.chunk_key.clone(), mesh);
 }
 
 #[wasm_bindgen]
