@@ -25,11 +25,25 @@ class GameUtils {
   game_delegate: GameDelegate
   network_delegate: NetworkDelegate
   ui_delegate: UIDelegate
+  wake_lock: WakeLockSentinel | undefined
 
   // Called when bevy side is ready
   init() {
     window.gameDatabase.init();
     this.game_delegate.on_ready()
+
+    if ("wakeLock" in navigator) {
+      navigator.wakeLock.request().then((v) => {
+        console.log("Acquired wake lock!")
+        this.wake_lock = v;
+
+      }).catch((v) => {
+        console.log("Failed to get wake lock!");
+        console.log(v);
+      });
+    } else {
+      console.log("Wake lock not supported!");
+    }
   }
 
   ui_message_callback(data_str: string) {
@@ -111,6 +125,7 @@ interface AppProps {
   network_delegate: NetworkDelegate,
   game_delegate: GameDelegate
 }
+
 
 const App: Component<AppProps> = (props) => {
 
