@@ -188,17 +188,16 @@ const App: Component<AppProps> = (props) => {
 
   return (
     <div class={styles.App}  >
-      <div class="touch-pan-x">
 
-        <header>
-          <div class='w-lvw h-svh overflow-clip'>
-            <canvas style={"z-index: 1; position: relative;"} id="bevy-portal"></canvas>
-          </div>
+      <header>
+        <div class='w-lvw h-svh overflow-clip'>
+          <canvas style={"z-index: 1; position: relative;"} id="bevy-portal"></canvas>
+        </div>
 
 
-          <UI callback={handleUIMessage} delegate={ui_delegate} />
-        </header>
-      </div>
+        <UI callback={handleUIMessage} delegate={ui_delegate} />
+      </header>
+
     </div >
   );
 };
