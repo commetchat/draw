@@ -9,6 +9,10 @@ use bevy::{
     log::info,
     platform::collections::HashMap,
 };
+
+#[cfg(target_arch = "wasm32")]
+use bevy::app::Update;
+
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
