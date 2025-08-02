@@ -6,7 +6,7 @@ use bevy::{
         system::{Commands, Res, Single},
     },
     math::Vec2,
-    render::view::RenderLayers,
+    render::view::{NoFrustumCulling, RenderLayers},
     sprite::Sprite,
     transform::components::Transform,
     utils::default,
@@ -67,6 +67,7 @@ pub fn spawn_player_sprite_system(
                 speed: 10.0,
                 do_scale: false,
             },
+            NoFrustumCulling,
             ZoomCancel,
             PlayerSprite::default(),
         ));
