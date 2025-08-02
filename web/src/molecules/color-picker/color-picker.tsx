@@ -88,7 +88,7 @@ const ColorPicker: Component<ColorPickerProps> = (props) => {
                     <md-slider value={s()} min={0} max={1.0} step={0.01} oninput={satEvent} onchange={(v) => { satEvent(v); reportChange() }} ></md-slider>
                 </div>
                 <div class='hue-picker' style={`--md-slider-inactive-track-color: linear-gradient(90deg, hsl(${h()}, ${s() * 100}%, 0%), hsl(${h()}, ${s() * 100}%, 50%), hsl(${h()}, ${s() * 100}%, 100%));`}>
-                    <md-slider value={l()} ticks min={0} max={1.0} step={0.1} oninput={lgtEvent} onchange={(v) => { lgtEvent(v); reportChange() }}  ></md-slider>
+                    <md-slider value={l()} min={0} max={1.0} step={0.01} oninput={lgtEvent} onchange={(v) => { lgtEvent(v); reportChange() }}  ></md-slider>
                 </div>
             </div>
         </div >
