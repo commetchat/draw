@@ -39,7 +39,6 @@ pub fn get_player_state_system(
 
     for event in mouse_motion_events.read() {
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, event.position) {
-            info!("Got world pos: {}", world_pos);
             position = Some(world_pos);
         }
     }
@@ -50,7 +49,6 @@ pub fn get_player_state_system(
         }
 
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, event.position) {
-            info!("Got touch world pos: {}", world_pos);
             position = Some(world_pos);
         }
     }
