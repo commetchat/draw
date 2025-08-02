@@ -207,7 +207,11 @@ pub fn append_stroke_system(
                 colors.append(&mut stroke_mesh.colors);
                 indices.append(&mut stroke_mesh.indices);
             } else {
-                info!("Unexpected vertex count in mesh! something is not right!");
+                info!(
+                    "Unexpected vertex count in mesh! something is not right! reloading chunk from database"
+                );
+                let mut needs_reloading = CHUNKS_NEED_RELOADING.lock().unwrap();
+                needs_reloading.push(chunk.0.chunk_id.clone());
             }
 
             if verts.len() == 0 {
