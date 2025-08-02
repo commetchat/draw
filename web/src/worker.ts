@@ -315,7 +315,7 @@ function send_stroke_index_to_user(userid: string, index: number, count: number)
 
         setTimeout(() => {
             send_stroke_index_to_user(userid, index + 1, count);
-        }, 20)
+        }, 50)
     };
 
 }

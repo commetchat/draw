@@ -7,6 +7,7 @@ use crate::networking::{
     connected_peers::{PeerConnectedEvent, connected_peers_event_system},
     handle_new_point_packet::handle_new_point_system,
     handle_player_state::handle_player_state_system,
+    handle_received_save_file::handle_received_save_file,
     handle_received_strokes::handle_received_strokes_system,
     handle_removed_strokes::handle_removed_strokes,
     packet::ReceivedPacket,
@@ -33,5 +34,6 @@ impl Plugin for NetworkingPlugin {
         app.add_systems(Update, connected_peers_event_system);
         app.add_systems(Update, send_player_state_system);
         app.add_systems(Update, handle_player_state_system);
+        app.add_systems(Update, handle_received_save_file);
     }
 }

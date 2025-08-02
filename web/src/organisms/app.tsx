@@ -12,6 +12,7 @@ import '@material/web/checkbox/checkbox.js';
 import { WebDatabase } from '../web_database';
 import UI, { UIDelegate } from './ui';
 import { UIMessage } from '../bindings/ui_binding';
+import { BinaryWriter } from '../utils/binary_writer';
 
 
 
@@ -86,6 +87,8 @@ async function initGame(instance_id: string, network_delegate: NetworkDelegate, 
   game.default();
 }
 
+var openedFileData: Uint8Array | null = null;
+
 function openFile() {
   var input = document.createElement('input');
   input.type = 'file';
@@ -101,7 +104,7 @@ function openFile() {
     // here we tell the reader what to do when it's done reading...
     reader.onload = readerEvent => {
       var content = (readerEvent as any).target.result; // this is the content!
-
+      openedFileData = new Uint8Array(content);
       game.load_file(new Uint8Array(content))
     }
   }
@@ -143,8 +146,17 @@ const App: Component<AppProps> = (props) => {
   props.network_delegate.on_peer_connected = (from) => {
     console.log("Peer connected! ", from)
     game.web_peer_connected(from);
-    window.gameDatabase.send_strokes_to_user(from);
 
+    if (openedFileData != null) {
+      let packet = new BinaryWriter();
+      packet.writeUint16(5);
+      packet.writeUint32(openedFileData!.length);
+      packet.writeBytes(openedFileData!);
+
+      let bytes = new Uint8Array(packet.getBuffer());
+
+      props.network_delegate.send_to(bytes, from);
+    }
   }
 
   props.network_delegate.on_peer_disconnected = (from) => {

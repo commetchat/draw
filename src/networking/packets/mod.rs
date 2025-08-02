@@ -4,6 +4,7 @@ use crate::networking::packet::PacketData;
 
 pub mod new_point;
 pub mod player_state;
+pub mod save_file_data;
 pub mod stroke_complete;
 pub mod stroke_removed;
 

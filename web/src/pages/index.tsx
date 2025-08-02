@@ -14,7 +14,19 @@ let connections = new Map()
 let peerjs_delegate: NetworkDelegate = {
     send_to: function (message: Uint8Array, to: String): void {
         let connection = connections.get(to) as DataConnection;
-        connection.send(message);
+
+        if (message.length > 64_000) {
+            const blob = new Blob([new Uint8Array(message)], {
+                type: "blob"
+            });
+            console.log("Sending blob");
+            connection.send(blob);
+        } else {
+            connection.send(message);
+        }
+
+        console.log("Sending bytes to peer :" + message.length.toString());
+
     },
 
     on_received: null,
@@ -50,7 +62,8 @@ function startConnection() {
         const hostId = urlParams.get('room');
 
         if (hostId != null) {
-            let connection = peer!.connect(hostId)
+            let connection = peer!.connect(hostId);
+
             console.log("Created connection!")
             connection.on("open", () => onConnectionOpened(connection))
         }
@@ -61,6 +74,11 @@ function startConnection() {
         console.log(conn)
         conn.on("open", () => onConnectionOpened(conn))
     })
+
+    peer.on("error", (err) => {
+        console.log("Peer error");
+        console.log(err);
+    })
 }
 
 function onConnectionOpened(conn: DataConnection) {
@@ -70,7 +88,13 @@ function onConnectionOpened(conn: DataConnection) {
     peerjs_delegate.on_peer_connected!(conn.peer)
 
     conn.on("data", (data) => {
-        peerjs_delegate.on_received!(new Uint8Array(data as any), conn.peer)
+        let bytes = new Uint8Array(data as any);
+        peerjs_delegate.on_received!(bytes, conn.peer)
+    });
+
+    conn.on("error", (err) => {
+        console.log("Connection Error");
+        console.log(err);
     });
 }
 

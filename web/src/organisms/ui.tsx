@@ -45,6 +45,12 @@ const UI: Component<UIProps> = (props) => {
     if (showConsole) {
         let original = console.log;
 
+        console.error = (e) => {
+            let s = getLines();
+            setLines(`${e}\n` + s.substring(0, 10000));
+            original(e)
+        }
+
         console.log = (e) => {
 
             let s = getLines();
