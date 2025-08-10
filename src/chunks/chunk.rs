@@ -259,6 +259,14 @@ pub fn update_chunk_system(
 
     let mut needs_reloading = CHUNKS_NEED_RELOADING.lock().unwrap();
 
+    let mut map = match LOAD_MESH_QUEUE.lock() {
+        Ok(map) => map,
+        Err(_) => {
+            info!("Failed to acquire lock!");
+            return;
+        }
+    };
+
     let a = now();
     for mut chunk in chunks.iter_mut() {
         let chunk_needs_reloading = needs_reloading.contains(&chunk.0.chunk_id);
@@ -271,17 +279,10 @@ pub fn update_chunk_system(
             }
 
             chunk.0.has_requested_db_chunks = true;
+            map.remove(&chunk.0.chunk_id);
             load_mesh_for_chunk(chunk.0.chunk_id.clone());
         }
     }
-
-    let mut map = match LOAD_MESH_QUEUE.lock() {
-        Ok(map) => map,
-        Err(_) => {
-            info!("Failed to acquire lock!");
-            return;
-        }
-    };
 
     for mut chunk in chunks.iter_mut() {
         if chunk.0.finished_loading {
