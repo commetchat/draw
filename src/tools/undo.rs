@@ -8,6 +8,7 @@ use bevy::{
 use crate::{
     active_strokes::active_stroke::{ActiveStrokeEvent, RemoveStrokeEvent},
     ui::ui_messages::{ReceivedUIMessage, UIMessage},
+    user_info::UserInfo,
 };
 static UNDO_QUEUE: LazyLock<Mutex<Vec<(f64, u32)>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
@@ -45,7 +46,9 @@ pub fn store_undo_strokes_system(mut events: EventReader<ActiveStrokeEvent>) {
     for event in events.read() {
         match event {
             ActiveStrokeEvent::StrokeFinished(stroke_finished_data) => {
-                if stroke_finished_data.owner.is_some() {
+                if !(stroke_finished_data.owner.is_none()
+                    || stroke_finished_data.owner == Some(UserInfo::get_user_id()))
+                {
                     continue;
                 }
 
