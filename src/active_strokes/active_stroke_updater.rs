@@ -12,7 +12,10 @@ use bevy::{
 };
 
 use crate::{
-    active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent},
+    active_strokes::{
+        active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent},
+        active_stroke_lifetime::ActiveStrokeLifetime,
+    },
     database::{
         web_database::{delete_stroke, store_multiple_strokes},
         web_stroke_data::JsStrokeData,
@@ -138,7 +141,11 @@ pub fn update_strokes_system(
                 for stroke in current_strokes.iter_mut() {
                     if stroke.1.timestamp == data.timestamp && stroke.1.id_random == data.id_random
                     {
-                        commands.entity(stroke.0).despawn();
+                        commands.entity(stroke.0).insert(
+                            (ActiveStrokeLifetime {
+                                remaining_life: 1.0,
+                            }),
+                        );
                     }
                 }
             }
