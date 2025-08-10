@@ -42,6 +42,7 @@ pub enum UIMessage {
     SetColor(Color),
     Undo,
     Redo,
+    ResetCamera,
     GameReady,
 }
 

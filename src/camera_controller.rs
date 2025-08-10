@@ -8,7 +8,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::lerp_transform::TargetTransform;
+use crate::{lerp_transform::TargetTransform, ui::ui_messages::ReceivedUIMessage};
 
 pub struct CameraControllerPlugin;
 
@@ -26,6 +26,7 @@ pub struct MouseCameraController {
 impl Plugin for CameraControllerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (touch_system, mouse_system, clamp_system).chain());
+        app.add_systems(Update, reset_camera_system);
     }
 }
 
@@ -176,4 +177,24 @@ fn touch_system(
     };
 
     camera_query.0.transform = new_transform;
+}
+
+pub fn reset_camera_system(
+    mut camera_query: Single<(
+        &mut TargetTransform,
+        &mut TouchCameraController,
+        &Camera,
+        &GlobalTransform,
+    )>,
+
+    mut events: EventReader<ReceivedUIMessage>,
+) {
+    for event in events.read() {
+        match &event.data {
+            crate::ui::ui_messages::UIMessage::ResetCamera => {
+                camera_query.0.transform = Transform::default()
+            }
+            _ => (),
+        }
+    }
 }

@@ -167,7 +167,14 @@ const UI: Component<UIProps> = (props) => {
                 </div>
 
                 <div class="pointer-events-auto flex justify-between gap-2 absolute bottom-0 right-0 m-4 ">
-                    <md-fab aria-label="Edit" onclick={(e) => {
+                    <md-fab aria-label="Reset Camera" onclick={(e) => {
+                        e.preventDefault();
+                        return postUiMessage({ type: "ResetCamera" });
+                    }}>
+                        <md-icon slot="icon">cameraswitch</md-icon>
+                    </md-fab>
+
+                    <md-fab aria-label="Undo" onclick={(e) => {
                         e.preventDefault();
                         return postUiMessage({ type: "Undo" });
                     }}>
