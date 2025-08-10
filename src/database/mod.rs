@@ -64,6 +64,7 @@ fn store_finished_strokes(mut events: EventReader<StrokeEvent>) {
     for event in events.read() {
         match event {
             StrokeEvent::StrokeFinished(stroke) => {
+                info!("Storing stroke by: {:?}", stroke.metadata.owner);
                 data.push(JsStrokeData::from_stroke(stroke));
 
                 // Pass to database in batches, to slightly reduce memory pressure

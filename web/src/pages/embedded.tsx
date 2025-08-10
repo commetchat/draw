@@ -24,7 +24,8 @@ let embedded_delegate: NetworkDelegate = {
 
     on_received: null,
     on_peer_connected: null,
-    on_peer_disconnected: null
+    on_peer_disconnected: null,
+    on_ready: null,
 }
 
 window.onmessage = (message) => {
@@ -36,6 +37,13 @@ window.onmessage = (message) => {
     if (message.data.type == "recv_from") {
         let from = message.data.info.from as string;
         embedded_delegate.on_received!(message.data.body, from)
+    }
+
+    if (message.data.type == "ready") {
+        console.log("Received ready message!");
+        console.log(message);
+        let id = message.data.info.id as string;
+        embedded_delegate.on_ready!(id);
     }
 }
 

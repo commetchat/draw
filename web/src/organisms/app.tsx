@@ -114,6 +114,7 @@ function openFile() {
 
 interface NetworkDelegate {
   send_to: (message: Uint8Array, to: string) => void;
+  on_ready: ((user_id: string) => void) | null;
   on_received: ((message: Uint8Array, from: string) => void) | null;
   on_peer_connected: ((from: string) => void) | null;
   on_peer_disconnected: ((from: string) => void) | null;
@@ -139,8 +140,11 @@ const App: Component<AppProps> = (props) => {
   }
 
   props.network_delegate.on_received = (message, from) => {
-
     game.web_receive_packet(from, message)
+  }
+
+  props.network_delegate.on_ready = (user_id) => {
+    game.web_set_user_id(user_id);
   }
 
   props.network_delegate.on_peer_connected = (from) => {

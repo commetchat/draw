@@ -114,7 +114,7 @@ pub fn update_strokes_system(
                                 timestamp: data.timestamp,
                                 id_random: data.id_random,
                                 origin: data.stroke_origin,
-                                owner: None,
+                                owner: data.owner.clone(),
                             },
                             data: StrokeData {
                                 stroke_type: crate::stroke::StrokeType::Paint(stroke.1.color),

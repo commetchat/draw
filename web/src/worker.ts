@@ -150,7 +150,7 @@ function store_multiple_strokes(items: [game.StrokeData]) {
 
 
         items.forEach((data) => {
-
+            console.log("Storing stroke by user: ", data.owner_id)
             let mesh = mesh_map.get(data.chunk_key);
 
             let vertex_offset = 0;
@@ -184,6 +184,7 @@ function store_multiple_strokes(items: [game.StrokeData]) {
             }
 
             console.log("Inserting stroke with id: ", data.id);
+            console.log(data);
 
             let result = {
                 id: data.id,

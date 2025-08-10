@@ -58,6 +58,7 @@ pub mod stylus_drawer;
 pub mod stylus_input;
 pub mod tools;
 pub mod ui;
+pub mod user_info;
 pub mod utils;
 pub mod web_input;
 

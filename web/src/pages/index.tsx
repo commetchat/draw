@@ -31,7 +31,8 @@ let peerjs_delegate: NetworkDelegate = {
 
     on_received: null,
     on_peer_connected: null,
-    on_peer_disconnected: null
+    on_peer_disconnected: null,
+    on_ready: null,
 }
 
 let game_delegate: GameDelegate = {
@@ -67,6 +68,8 @@ function startConnection() {
             console.log("Created connection!")
             connection.on("open", () => onConnectionOpened(connection))
         }
+
+        onReady(id);
     });
 
     peer.on("connection", (conn) => {
@@ -96,6 +99,10 @@ function onConnectionOpened(conn: DataConnection) {
         console.log("Connection Error");
         console.log(err);
     });
+}
+
+function onReady(id: string) {
+    peerjs_delegate.on_ready!(id);
 }
 
 const Root: Component = () => {

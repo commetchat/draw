@@ -21,6 +21,7 @@ use crate::{
     stylus_input::StylusEvent,
     tools::tools_plugin::ActiveTool,
     ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, UIMessage},
+    user_info::UserInfo,
     utils::{get_random_uint32, get_system_time},
 };
 
@@ -105,7 +106,7 @@ pub fn paintbrush_system(
                     stroke_origin: world_pos,
                     point: world_pos,
                     width: width,
-                    owner: None,
+                    owner: Some(UserInfo::get_user_id()),
                     pressure: data.pressure,
                 };
 
@@ -133,7 +134,7 @@ pub fn paintbrush_system(
                         color: current.color,
                         point: world_pos,
                         width: current.width,
-                        owner: None,
+                        owner: Some(UserInfo::get_user_id()),
                         pressure: data.pressure,
                     }));
                 }
@@ -153,11 +154,13 @@ fn finish_stroke(stroke_events: &mut EventWriter<ActiveStrokeEvent>, stroke: &mu
 
     match &stroke.current_stroke_info {
         Some(current) => {
+            info!("Owner: {:?}", current.owner);
+
             stroke_events.write(ActiveStrokeEvent::StrokeFinished(StrokeFinishedData {
                 stroke_origin: current.stroke_origin,
                 timestamp: current.timestamp,
                 id_random: current.id_random,
-                owner: None,
+                owner: current.owner.clone(),
             }));
         }
         None => {

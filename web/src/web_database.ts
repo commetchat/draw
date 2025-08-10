@@ -31,6 +31,7 @@ export class WebDatabase {
 
     store_multiple_strokes(items: [game.StrokeData]) {
         let converted_items = items.map((a) => {
+
             return this.convertStrokeDataToJs(a)
         })
 

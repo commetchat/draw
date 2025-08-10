@@ -51,6 +51,15 @@ const MultiplayerTest: Component = () => {
 
     const connect = () => {
         instances.forEach((sender) => {
+            let sender_frame = document.getElementById(sender) as any
+            let msg = {
+                "type": "ready",
+                "info": { "id": sender },
+                "body": null
+            }
+
+            sender_frame.contentWindow.postMessage(msg);
+
             instances.forEach((receiver) => {
                 if (sender == receiver) return;
 

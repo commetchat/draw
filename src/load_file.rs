@@ -1,8 +1,4 @@
-
-use bevy::{
-    log::info,
-    math::Vec2,
-};
+use bevy::{log::info, math::Vec2};
 use binary_util::ByteReader;
 use safe_transmute::transmute_to_bytes;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -33,6 +29,9 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
     let version = reader.read_u32()?;
     info!("Magic: {}", magic);
     info!("File version: {}", version);
+
+    let mut found_user_ids = Vec::new();
+
     while reader.peek_ahead(1).is_ok() {
         let chunk_id = read_string(&mut reader)?;
 
@@ -50,7 +49,16 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
             let is_remote = reader.read_bool()?;
             let mut owner_id: Option<String> = None;
             if is_remote {
-                owner_id = Some(read_string(&mut reader)?);
+                let id = read_string(&mut reader)?;
+                owner_id = Some(id.clone());
+
+                if !found_user_ids.contains(&id) {
+                    found_user_ids.push(id);
+                }
+            } else {
+                if !found_user_ids.contains(&"local".to_string()) {
+                    found_user_ids.push("local".to_string());
+                }
             }
 
             let num_strokes = reader.read_u32()?;
@@ -94,6 +102,10 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
             colors.to_vec(),
             strokes,
         );
+    }
+
+    for id in found_user_ids.iter() {
+        info!("Found user: {}", id);
     }
 
     info!("Done!");
