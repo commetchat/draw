@@ -10,6 +10,7 @@ import Embedded from './pages/embedded';
 import UI from './organisms/ui';
 import DevUI from './pages/dev-ui';
 import MatrixWidget from './pages/matrix';
+import { Accessor, createSignal, Setter } from 'solid-js';
 
 const root = document.getElementById('root');
 
@@ -18,6 +19,9 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
     'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got misspelled?',
   );
 }
+
+const [saveProgress, setSaveProgress] = createSignal("");
+export const useSaveProgress: () => [Accessor<string>, Setter<string>] = () => [saveProgress, setSaveProgress];
 
 render(() => <Router>
   <Route path="/" component={Root} />

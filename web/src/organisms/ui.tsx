@@ -15,6 +15,7 @@ import ColorPicker from '../molecules/color-picker/color-picker';
 import { UIMessage } from '../bindings/ui_binding';
 import { hsl2rgb, rgb2hex, rgb2hsl } from '../utils';
 import h from 'solid-js/h';
+import { useSaveProgress } from '..';
 
 interface UIProps {
     callback: ((message: UIMessage) => void) | null;
@@ -30,6 +31,7 @@ const UI: Component<UIProps> = (props) => {
     const [paintColorHsl, setPaintColorHsl] = createSignal<[number, number, number]>([0, 1.0, 0.5])
     const [paintbrushWidth, setPaintbrushWidth] = createSignal(10.0);
     const [currentTool, setCurrentTool] = createSignal("Paintbrush");
+    const [saveProgress, setSaveProgress] = useSaveProgress();
 
     const colorPicker = "ColorPicker";
     const paintbrush = "Paintbrush";
@@ -110,6 +112,12 @@ const UI: Component<UIProps> = (props) => {
         }
     });
 
+    function saveToBackend() {
+        if(saveProgress() == "") {
+            postUiMessage({ type: "SaveToBackend" });
+        }
+    }
+
     return (
         <div style={`--md-sys-color-primary: ${rgb2hex(hsl2rgb(paintColorHsl()[0], 0.2, 0.5))};`}>
             <div style={`--md-sys-color-secondary-container: ${rgb2hex(hsl2rgb(paintColorHsl()[0], 0.3, 0.8))};`}>
@@ -120,7 +128,7 @@ const UI: Component<UIProps> = (props) => {
                         <div class="pointer-events-auto flex justify-between gap-2 " style={"margin: 10px; position: absolute; left: 0;"}>
                             <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
                             <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
-                            <md-filled-button onclick={() => postUiMessage({ type: "SaveToBackend" })}> <div class='mx-4' >Save</div></md-filled-button>
+                            <md-filled-button onclick={() => saveToBackend()}> <div class='mx-4' >{saveProgress() == "" ? `Save` : saveProgress()}</div></md-filled-button>
                         </div>
 
                         <Show when={gameReady() == false}>

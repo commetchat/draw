@@ -396,7 +396,7 @@ function writeChunk(chunk_id: string): Promise<ArrayBuffer> {
 
     const p = new Promise<ArrayBuffer>((resolve, reject) => {
 
-        const tx = db?.transaction(strokes, "readonly");
+        const tx = db?.transaction(strokes, "readwrite");
         const store = tx?.objectStore(strokes);
 
         var writer = new BinaryWriter();
@@ -421,6 +421,11 @@ function writeChunk(chunk_id: string): Promise<ArrayBuffer> {
                         chunkStrokes.push(stroke);
                     }
                 }
+
+                stroke = structuredClone(stroke);
+                stroke.source = game.StrokeSource.Storage;
+
+                store?.put(stroke);
 
                 cursor.continue();
             }
@@ -641,6 +646,12 @@ function delete_stroke(id: string) {
     request!.onsuccess = (ev) => {
         let result = (ev.target as IDBRequest).result as game.StrokeData;
         let chunk = result.chunk_key;
+
+        if(result.source != game.StrokeSource.User) {
+            console.log("Cannot delete stroke that was not from the user");
+            return;
+        }
+        
         console.log("Exists in chunk: ", chunk);
         console.log("Mesh starts at: ", result.vertex_offset);
         console.log("Num verts: ", result.num_verts);

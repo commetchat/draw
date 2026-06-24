@@ -15,6 +15,7 @@ import { useSearchParams } from '@solidjs/router';
 import { createMatrixRTCSdk, MatrixRTCSdk } from '../matrixrtc/matrixrtc-sdk.js';
 import { INotifyCapabilitiesActionRequest, IVisibilityActionRequest, MatrixCapabilities, WidgetApi, WidgetApiFromWidgetAction } from 'matrix-widget-api';
 import { UploadQueue } from '../utils/upload_queue';
+import { useSaveProgress } from '..';
 
 
 let game_delegate: GameDelegate = {
@@ -44,7 +45,7 @@ class MatrixRTCDelegate implements NetworkDelegate {
     requiredCapabilities: string[];
     uploadQueue: UploadQueue;
 
-    backendChunks: BackendChunk[];
+    pendingChunks: BackendChunk[];
     events: EventTarget;
 
     constructor(sdk: MatrixRTCSdk) {
@@ -54,7 +55,7 @@ class MatrixRTCDelegate implements NetworkDelegate {
         this.on_ready = null;
         this.on_received = null;
         this.documentId = null;
-        this.backendChunks = [];
+        this.pendingChunks = [];
         this.events = new EventTarget();
 
         this.uploadQueue = new UploadQueue(
@@ -89,11 +90,11 @@ class MatrixRTCDelegate implements NetworkDelegate {
 
     download_chunks = async (chunk_id: string) => {
         console.log("Downloading chunks from matrix homeserver", chunk_id);
-        console.log(this.backendChunks);
+        console.log(this.pendingChunks);
         
-        
-        var urls = this.backendChunks.filter((i) => i.chunk == chunk_id);
-        this.backendChunks = this.backendChunks.filter((i) => i.chunk != chunk_id);
+
+        var urls = this.pendingChunks.filter((i) => i.chunk == chunk_id);
+        this.pendingChunks = this.pendingChunks.filter((i) => i.chunk != chunk_id);
 
         for(var i = 0; i < urls.length; i++) {
             var file = urls[i];
@@ -235,7 +236,7 @@ class MatrixRTCDelegate implements NetworkDelegate {
 
         while(true) {
             console.log("Loading batch: ", nextBatch);
-            var related = await this.api.readEventRelations(this.documentId, undefined, "m.reference", this.chunkEventType, 5, nextBatch);
+            var related = await this.api.readEventRelations(this.documentId, undefined, "m.reference", this.chunkEventType, 100, nextBatch);
             console.log("Got related events: ", related);
 
 
@@ -245,7 +246,7 @@ class MatrixRTCDelegate implements NetworkDelegate {
                 var url = chunkEvent.content["url"];
                 var sender = chunkEvent.sender;
                 
-                this.backendChunks.push({
+                this.pendingChunks.push({
                     chunk: chunk as string,
                     url: url as string,
                     sender,
@@ -270,6 +271,8 @@ const MatrixWidget: Component = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [delegate, setDelegate] = createSignal<MatrixRTCDelegate | null>(null);
 
+    const [saveProgress, setSaveProgress] = useSaveProgress();
+
     onMount(async () => {
         let sdk = await createMatrixRTCSdk("chat.commet.drawinggame")
         sdk.join();
@@ -280,6 +283,19 @@ const MatrixWidget: Component = () => {
             console.log("Delegate is ready!");
             setDelegate(delegate);
         })
+
+        delegate.uploadQueue.addEventListener("queuechanged", (ev) => {
+            console.log("Upload queue changed!");
+            console.log(ev);
+
+            let queueLength = (ev as CustomEvent).detail.length as number;
+
+            if(queueLength > 0) {
+                setSaveProgress("Uploading: " + queueLength.toString());
+            } else {
+                setSaveProgress("");
+            }
+        });
 
         await delegate.init();
 
