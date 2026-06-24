@@ -7,3 +7,5 @@ web/src/bevy/draw-bevy_bg.wasm
 web/src/bevy/draw-bevy_bg.js
 web/src/bevy/draw-bevy.js
 web/src/bevy/draw-bevy.d.ts
+element-call/
+/web/src/matrixrtc

@@ -8,6 +8,7 @@ use bevy::{
         view::{NoFrustumCulling, RenderLayers},
     },
 };
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     CustomMaterial, RENDER_LAYER_BATCH_STROKES,
@@ -15,10 +16,12 @@ use crate::{
     chunks::{CHUNK_SIZE, ChunkEvent},
     database::{
         APPEND_STROKE_DATAS, CHUNKS_NEED_RELOADING, DATABASE_READY, LOAD_MESH_QUEUE,
-        REMOVE_CHUNK_VERTS, web_database::load_mesh_for_chunk, web_stroke_data::JsMeshData,
+        REMOVE_CHUNK_VERTS,
+        web_database::load_mesh_for_chunk,
+        web_stroke_data::{JSStrokeSource, JsMeshData},
     },
     retained_view::copy_camera::RetainedViewEvent,
-    stroke::StrokeMesh,
+    stroke::{StrokeMesh, StrokeSource},
     utils::{DEBUG_DRAW, now},
 };
 
@@ -115,6 +118,24 @@ pub fn chunk_spawn_system(
                     }
                 }
             }
+        }
+    }
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = gameUtils)]
+    pub fn web_load_chunk(to: String);
+}
+
+pub fn backend_load_chunk_system(mut events: EventReader<ChunkEvent>) {
+    let _ = events;
+    for event in events.read() {
+        match event {
+            ChunkEvent::Visible(id, _position) => {
+                web_load_chunk(id.clone());
+            }
+            _ => {}
         }
     }
 }
@@ -229,6 +250,11 @@ pub fn append_stroke_system(
                 timestamp: item.timestamp,
                 id_random: item.id_random,
                 owner: item.owner_id,
+                source: match item.source {
+                    JSStrokeSource::User => StrokeSource::User,
+                    JSStrokeSource::Storage => StrokeSource::Storage,
+                    JSStrokeSource::Remote => StrokeSource::Remote,
+                },
                 stroke_origin: Vec2 {
                     x: item.origin_x,
                     y: item.origin_y,
@@ -285,16 +311,13 @@ pub fn update_chunk_system(
     }
 
     for mut chunk in chunks.iter_mut() {
-        if chunk.0.finished_loading {
-            continue;
-        }
-
         let mesh_data = map.remove(&chunk.0.chunk_id);
-
+        
         let mesh_data = match mesh_data {
             Some(mesh_data) => mesh_data,
             None => continue,
         };
+        info!("Received new mesh data for chunk: {}", chunk.0.chunk_id);
 
         let handle = chunk.1;
         let handle = &handle.0;

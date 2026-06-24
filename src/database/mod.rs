@@ -100,7 +100,7 @@ pub fn db_append_mesh_data(strokes: Vec<JsStrokeData>) {
 #[wasm_bindgen]
 pub fn db_on_mesh_loaded(mesh: JsMeshData) {
     let mut map = LOAD_MESH_QUEUE.lock().unwrap();
-
+    info!("Received mesh data from js: {}", mesh.chunk_key);
     map.insert(mesh.chunk_key.clone(), mesh);
 }
 

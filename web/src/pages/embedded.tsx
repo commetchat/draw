@@ -26,6 +26,10 @@ let embedded_delegate: NetworkDelegate = {
     on_peer_connected: null,
     on_peer_disconnected: null,
     on_ready: null,
+    upload_chunk: null,
+    download_chunks: function (chunk_id: string): void {
+        throw new Error('Function not implemented.');
+    }
 }
 
 window.onmessage = (message) => {

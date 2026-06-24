@@ -11,7 +11,7 @@ extern "C" {
     pub fn store_multiple_strokes(s: Vec<JsStrokeData>);
 
     #[wasm_bindgen(js_namespace = gameDatabase)]
-    pub fn set_initial_chunk_state(
+    pub fn append_chunk_data(
         id: String,
         vertices: Vec<u8>,
         indices: Vec<u32>,

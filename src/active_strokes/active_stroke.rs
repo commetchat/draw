@@ -4,6 +4,8 @@ use bevy::{
     math::Vec2,
 };
 
+use crate::stroke::StrokeSource;
+
 #[derive(Debug, Component)]
 pub struct ActiveStroke {
     pub timestamp: f64,
@@ -26,6 +28,7 @@ pub struct NewPointData {
     pub width: f32,
     pub pressure: f32,
     pub owner: Option<String>,
+    pub source: StrokeSource,
 }
 
 #[derive(Debug)]
@@ -34,6 +37,7 @@ pub struct StrokeFinishedData {
     pub id_random: u32,
     pub stroke_origin: Vec2,
     pub owner: Option<String>,
+    pub source: StrokeSource,
 }
 
 #[derive(Debug, Event)]

@@ -38,6 +38,7 @@ pub enum Tool {
 pub enum UIMessage {
     LoadFile,
     SaveFile,
+    SaveToBackend,
     SetTool(Tool),
     SetColor(Color),
     Undo,

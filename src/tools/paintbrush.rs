@@ -16,13 +16,7 @@ use bevy::{
 };
 
 use crate::{
-    active_strokes::active_stroke::{ActiveStrokeEvent, NewPointData, StrokeFinishedData},
-    retained_view::copy_camera::TargetCamera,
-    stylus_input::StylusEvent,
-    tools::tools_plugin::ActiveTool,
-    ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, UIMessage},
-    user_info::UserInfo,
-    utils::{get_random_uint32, get_system_time},
+    active_strokes::active_stroke::{ActiveStrokeEvent, NewPointData, StrokeFinishedData}, retained_view::copy_camera::TargetCamera, stroke::StrokeSource::User, stylus_input::StylusEvent, tools::tools_plugin::ActiveTool, ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, UIMessage}, user_info::UserInfo, utils::{get_random_uint32, get_system_time},
 };
 
 #[derive(Component, Default, Debug)]
@@ -108,6 +102,7 @@ pub fn paintbrush_system(
                     width: width,
                     owner: Some(UserInfo::get_user_id()),
                     pressure: data.pressure,
+                    source: User,
                 };
 
                 active_paintbrush.0.current_stroke_info = Some(info.clone());
@@ -135,6 +130,7 @@ pub fn paintbrush_system(
                         point: world_pos,
                         width: current.width,
                         owner: Some(UserInfo::get_user_id()),
+                        source: User,
                         pressure: data.pressure,
                     }));
                 }
@@ -160,6 +156,7 @@ fn finish_stroke(stroke_events: &mut EventWriter<ActiveStrokeEvent>, stroke: &mu
                 stroke_origin: current.stroke_origin,
                 timestamp: current.timestamp,
                 id_random: current.id_random,
+                source: User,
                 owner: current.owner.clone(),
             }));
         }

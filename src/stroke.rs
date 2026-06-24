@@ -13,6 +13,14 @@ pub enum StrokeType {
     Eraser,
 }
 
+
+#[derive(Debug, Clone)]
+pub enum StrokeSource {
+    User,
+    Storage,
+    Remote
+}
+
 #[derive(Clone)]
 pub struct StrokeData {
     pub stroke_type: StrokeType,
@@ -127,6 +135,7 @@ pub struct StrokeMetadata {
     pub id_random: u32,
     pub owner: Option<String>,
     pub origin: Vec2,
+    pub source: StrokeSource,
 }
 
 impl StrokeMetadata {

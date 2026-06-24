@@ -5,12 +5,21 @@ use crate::{
     stroke::Stroke,
 };
 
+#[derive(Clone)]
+#[wasm_bindgen(getter_with_clone, js_name = "StrokeSource")]
+pub enum JSStrokeSource {
+    User,
+    Storage,
+    Remote,
+}
+
 #[wasm_bindgen(getter_with_clone, js_name = "StrokeData")]
 #[derive(Clone)]
 pub struct JsStrokeData {
     pub id: String,
     pub id_random: u32,
     pub timestamp: f64,
+    pub source: JSStrokeSource,
     pub chunk_key: String,
     pub origin_x: f32,
     pub origin_y: f32,
@@ -66,6 +75,7 @@ impl JsStrokeData {
         vertex_data: Option<Vec<u8>>,
         index_data: Option<Vec<u32>>,
         color_data: Option<Vec<u8>>,
+        source: JSStrokeSource,
     ) -> JsStrokeData {
         JsStrokeData {
             id: id,
@@ -81,6 +91,7 @@ impl JsStrokeData {
             vertex_data: vertex_data,
             index_data: index_data,
             color_data: color_data,
+            source: source,
         }
     }
 }
@@ -119,6 +130,11 @@ impl JsStrokeData {
             vertex_data: mesh_data.0,
             index_data: mesh_data.1,
             color_data: mesh_data.2,
+            source: match stroke.metadata.source {
+                crate::stroke::StrokeSource::User => JSStrokeSource::User,
+                crate::stroke::StrokeSource::Remote => JSStrokeSource::Remote,
+                crate::stroke::StrokeSource::Storage => JSStrokeSource::Storage,
+            }
         };
     }
 }

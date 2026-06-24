@@ -6,8 +6,7 @@ use bevy::{
 use binary_util::ByteReader;
 
 use crate::{
-    active_strokes::active_stroke::NewPointData,
-    networking::{packet::PacketData, packets::Packet},
+    active_strokes::active_stroke::NewPointData, networking::{packet::PacketData, packets::Packet}, stroke::StrokeSource,
 };
 
 #[derive(Clone)]
@@ -53,6 +52,7 @@ impl Packet for NewPointPacketData {
                 width: width,
                 pressure: pressure,
                 owner: None,
+                source: StrokeSource::Remote,
             },
         }))
     }

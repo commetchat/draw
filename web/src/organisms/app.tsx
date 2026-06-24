@@ -68,6 +68,10 @@ class GameUtils {
   web_send_packet(to: string, data: Uint8Array) {
     this.network_delegate.send_to(data, to);
   }
+
+  web_load_chunk(id: string) {
+    this.network_delegate.download_chunks(id);
+  }
 }
 
 declare global {
@@ -112,12 +116,18 @@ function openFile() {
   input.click();
 }
 
+function saveToBackend() {
+  window.gameDatabase
+}
+
 interface NetworkDelegate {
   send_to: (message: Uint8Array, to: string) => void;
   on_ready: ((user_id: string) => void) | null;
   on_received: ((message: Uint8Array, from: string) => void) | null;
   on_peer_connected: ((from: string) => void) | null;
   on_peer_disconnected: ((from: string) => void) | null;
+  upload_chunk: ((chunk_id: string, data: Uint8Array) => void) | null;
+  download_chunks: ((chunk_id: string) => void);
 }
 
 interface GameDelegate {
@@ -174,6 +184,11 @@ const App: Component<AppProps> = (props) => {
 
     if (message.type == "LoadFile") {
       openFile()
+      return;
+    }
+
+    if(message.type == "SaveToBackend") {
+      window.gameDatabase.saveToBackend();
       return;
     }
 

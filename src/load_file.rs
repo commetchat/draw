@@ -4,16 +4,14 @@ use safe_transmute::transmute_to_bytes;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    database::{web_database::set_initial_chunk_state, web_stroke_data::JsStrokeData},
-    mesh_conversion::stroke_to_mesh,
-    stroke::{Stroke, StrokeData, StrokeMetadata},
+    database::{web_database::append_chunk_data, web_stroke_data::{JSStrokeSource, JsStrokeData}}, mesh_conversion::stroke_to_mesh, stroke::{Stroke, StrokeData, StrokeMetadata, StrokeSource},
 };
 
 pub struct LoadFile;
 
 #[wasm_bindgen]
 pub fn load_file(bytes: Vec<u8>) {
-    match load(bytes) {
+    match load(bytes, JSStrokeSource::User, None) {
         Ok(_) => (),
         Err(_) => {
             info!("Failed to load from file!");
@@ -21,7 +19,27 @@ pub fn load_file(bytes: Vec<u8>) {
     }
 }
 
-fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
+#[wasm_bindgen]
+pub fn load_chunk(bytes: Vec<u8>, owner: String) {
+    info!("Loading chunk from: {}", owner);
+
+    match load(bytes, JSStrokeSource::Storage, Some(owner)) {
+        Ok(_) => (),
+        Err(_) => {
+            info!("Failed to load from file!");
+        }
+    }
+}
+
+struct ChunkLoadResult {
+    chunk_id: String,
+    indices: Vec<u32>,
+    colors: Vec<[f32; 4]>,
+    vertices: Vec<[f32; 3]>,
+    strokes: Vec<JsStrokeData>,
+}
+
+fn load(bytes: Vec<u8>, source: JSStrokeSource, user_id: Option<String>) -> Result<(), std::io::Error> {
     let mut reader = ByteReader::from(bytes);
     info!("Reading save file");
 
@@ -33,74 +51,25 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
     let mut found_user_ids = Vec::new();
 
     while reader.peek_ahead(1).is_ok() {
-        let chunk_id = read_string(&mut reader)?;
+        let mut result = read_chunk(&mut reader, &mut found_user_ids)?;
 
-        info!("Reading chunk: {}", chunk_id);
+        let vertices = transmute_to_bytes(&result.vertices);
+        let colors = transmute_to_bytes(&result.colors);
 
-        let num_keys = reader.read_u32()?;
-        info!("Has {} keys", num_keys);
+        for stroke in &mut result.strokes {
+            stroke.source = source.clone();
 
-        let mut combined_indices = Vec::<u32>::new();
-        let mut combined_colors = Vec::<[f32; 4]>::new();
-        let mut combined_vertices = Vec::<[f32; 3]>::new();
-        let mut strokes = Vec::new();
-
-        for _ in 0..num_keys {
-            let is_remote = reader.read_bool()?;
-            let mut owner_id: Option<String> = None;
-            if is_remote {
-                let id = read_string(&mut reader)?;
-                owner_id = Some(id.clone());
-
-                if !found_user_ids.contains(&id) {
-                    found_user_ids.push(id);
-                }
-            } else {
-                if !found_user_ids.contains(&"local".to_string()) {
-                    found_user_ids.push("local".to_string());
-                }
-            }
-
-            let num_strokes = reader.read_u32()?;
-
-            info!("Reading {} strokes for {:?}", num_strokes, owner_id);
-
-            for _ in 0..num_strokes {
-                let stroke_data = read_stroke(&mut reader, &owner_id)?;
-
-                if stroke_data.metadata.timestamp < 1749429383.719 {
-                    continue;
-                }
-
-                let start_index = u32::try_from(combined_vertices.len()).unwrap();
-
-                let (mut verts, mut colors, indices) = stroke_to_mesh(&stroke_data);
-
-                for i in indices {
-                    combined_indices.push(i + start_index);
-                }
-
-                let mut js_data = JsStrokeData::from_stroke(&stroke_data);
-
-                js_data.vertex_offset = Some(start_index);
-                js_data.num_verts = Some(u32::try_from(verts.len()).unwrap());
-
-                combined_vertices.append(&mut verts);
-                combined_colors.append(&mut colors);
-
-                strokes.push(js_data);
+            if let Some(owner) = &user_id {
+                stroke.owner_id = Some(owner.clone());
             }
         }
 
-        let vertices = transmute_to_bytes(&combined_vertices);
-        let colors = transmute_to_bytes(&combined_colors);
-
-        set_initial_chunk_state(
-            chunk_id,
+        append_chunk_data(
+            result.chunk_id,
             vertices.to_vec(),
-            combined_indices,
+            result.indices,
             colors.to_vec(),
-            strokes,
+            result.strokes,
         );
     }
 
@@ -113,9 +82,105 @@ fn load(bytes: Vec<u8>) -> Result<(), std::io::Error> {
     return Ok(());
 }
 
+fn read_chunk(
+    reader: &mut ByteReader,
+    found_user_ids: &mut Vec<String>,
+) -> Result<ChunkLoadResult, std::io::Error> {
+    let chunk_id = read_string(reader)?;
+    info!("Reading chunk: {}", chunk_id);
+
+    let num_keys = reader.read_u32()?;
+    info!("Has {} keys", num_keys);
+
+    let mut combined_indices = Vec::<u32>::new();
+    let mut combined_colors = Vec::<[f32; 4]>::new();
+    let mut combined_vertices = Vec::<[f32; 3]>::new();
+    let mut strokes = Vec::new();
+
+    for _ in 0..num_keys {
+        let is_remote = reader.read_bool()?;
+        let mut owner_id: Option<String> = None;
+        if is_remote {
+            let id = read_string(reader)?;
+            owner_id = Some(id.clone());
+
+            if !found_user_ids.contains(&id) {
+                found_user_ids.push(id);
+            }
+        } else {
+            if !found_user_ids.contains(&"local".to_string()) {
+                found_user_ids.push("local".to_string());
+            }
+        }
+
+        let num_strokes = reader.read_u32()?;
+
+        info!("Reading {} strokes for {:?}", num_strokes, owner_id);
+
+        for _ in 0..num_strokes {
+            let stroke_data = read_stroke(reader, &owner_id, StrokeSource::User)?;
+            // d
+            // if (owner_id == Some("3384a152-6287-4160-b8dd-870a13f3189d".to_string())) {
+            //     continue;
+            // }
+
+            //b
+            // if (owner_id == Some("1f432774-4e0d-436e-abdd-65dfc276c9df".to_string())) {
+            //     continue;
+            // }
+
+            //b
+            // if (owner_id == Some("02210ccb-e051-4cfd-80b2-aceae2afc283".to_string())) {
+            //     continue;
+            // }
+
+            //b
+            // if (owner_id == Some("eab04375-2f9f-4b0a-ae1b-c6d28451a237".to_string())) {
+            //     continue;
+            // }
+
+            //b
+            // if (owner_id == Some("ad465ffc-d6c6-4645-ab49-95a6871fb0a9".to_string())) {
+            //    continue;
+            // }
+
+            if stroke_data.metadata.timestamp < 1749429383.719 {
+                continue;
+            }
+
+            let start_index = u32::try_from(combined_vertices.len()).unwrap();
+
+            let (mut verts, mut colors, indices) = stroke_to_mesh(&stroke_data);
+
+            for i in indices {
+                combined_indices.push(i + start_index);
+            }
+
+            let mut js_data = JsStrokeData::from_stroke(&stroke_data);
+
+            js_data.vertex_offset = Some(start_index);
+            js_data.num_verts = Some(u32::try_from(verts.len()).unwrap());
+
+            combined_vertices.append(&mut verts);
+            combined_colors.append(&mut colors);
+
+            strokes.push(js_data);
+        }
+    }
+
+    Ok(ChunkLoadResult {
+        chunk_id: chunk_id,
+        indices: combined_indices,
+        colors: combined_colors,
+        vertices: combined_vertices,
+        strokes,
+    })
+}
+
 pub fn read_stroke(
     reader: &mut ByteReader,
     owner_id: &Option<String>,
+    source: StrokeSource,
 ) -> Result<Stroke, std::io::Error> {
     let id_random = reader.read_u32()?;
     let timestamp = reader.read_f64()?;
@@ -135,6 +200,7 @@ pub fn read_stroke(
             timestamp: timestamp,
             id_random: id_random,
             owner: owner_id.clone(),
+            source: source,
             origin: Vec2 {
                 x: origin_x,
                 y: origin_y,

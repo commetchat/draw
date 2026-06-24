@@ -29,7 +29,7 @@ export class WebDatabase {
     }
 
 
-    store_multiple_strokes(items: [game.StrokeData]) {
+    store_multiple_strokes(items: [game.StrokeData], source: string) {
         let converted_items = items.map((a) => {
 
             return this.convertStrokeDataToJs(a)
@@ -37,17 +37,18 @@ export class WebDatabase {
 
         this.worker.postMessage({
             type: "store_multiple_strokes",
-            data: converted_items
+            data: converted_items,
+            source: source,
         })
     }
 
-    set_initial_chunk_state(chunk_key: string, vertex_data: Uint8Array, index_data: Uint32Array, color_data: Uint8Array, strokes: [game.StrokeData]) {
+    append_chunk_data(chunk_key: string, vertex_data: Uint8Array, index_data: Uint32Array, color_data: Uint8Array, strokes: [game.StrokeData]) {
         let converted_strokes = strokes.map((a) => {
             return this.convertStrokeDataToJs(a)
         })
 
         this.worker.postMessage({
-            type: "set_initial_chunk_state",
+            type: "append_chunk_data",
             data: {
                 chunk_key: chunk_key,
                 vertex_data: vertex_data.buffer,
@@ -80,6 +81,7 @@ export class WebDatabase {
             vertex_data: a.vertex_data,
             index_data: a.index_data,
             color_data: a.color_data,
+            source: a.source,
         };
 
         a.free()
@@ -98,6 +100,13 @@ export class WebDatabase {
         this.worker.postMessage({
             type: "save_to_file",
         });
+    }
+
+
+    saveToBackend() {
+        this.worker.postMessage({
+            type: "save_to_backend"
+        })
     }
 
     delete_stroke(id: string) {
@@ -142,6 +151,13 @@ export class WebDatabase {
         if (message.data.type == "remove_verts") {
             game.db_remove_verts(message.data.data.chunk_key, message.data.data.offset, message.data.data.num_verts)
         }
+
+        if(message.data.type == "save_chunk") {
+            console.log("SAVE CHUNK TO BACKEND");
+            console.log(message.data);
+            let bytes = message.data.data.data as ArrayBuffer;
+            this.network_delegate.upload_chunk!(message.data.data.chunk_id, new Uint8Array(bytes));
+        }
     }
 }
 
@@ -177,11 +193,10 @@ function append_mesh_data(data: game.StrokeData[]) {
             s.num_verts,
             s.vertex_data,
             s.index_data,
-            s.color_data
+            s.color_data,
+            s.source,
         )
     });
-
-
 
     game.db_append_mesh_data(converted);
 }

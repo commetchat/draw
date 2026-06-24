@@ -41,6 +41,7 @@ pub fn send_active_strokes_system(
                                 timestamp: stroke.timestamp,
                                 owner: None,
                                 origin: stroke.stroke_origin,
+                                source: stroke_finished_data.source.clone(),
                             },
                             data: StrokeData {
                                 stroke_type: crate::stroke::StrokeType::Paint(stroke.color),

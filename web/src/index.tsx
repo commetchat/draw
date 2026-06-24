@@ -9,6 +9,7 @@ import MultiplayerTest from './pages/dev';
 import Embedded from './pages/embedded';
 import UI from './organisms/ui';
 import DevUI from './pages/dev-ui';
+import MatrixWidget from './pages/matrix';
 
 const root = document.getElementById('root');
 
@@ -23,4 +24,5 @@ render(() => <Router>
   <Route path="/dev" component={MultiplayerTest} />
   <Route path="/dev-ui" component={DevUI} />
   <Route path="/embedded" component={Embedded} />
+  <Route path="/matrix" component={MatrixWidget} />
 </Router>, root!);

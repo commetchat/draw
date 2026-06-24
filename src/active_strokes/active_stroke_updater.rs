@@ -114,7 +114,9 @@ pub fn update_strokes_system(
                                 timestamp: data.timestamp,
                                 id_random: data.id_random,
                                 origin: data.stroke_origin,
+                                source: data.source.clone(),
                                 owner: data.owner.clone(),
+
                             },
                             data: StrokeData {
                                 stroke_type: crate::stroke::StrokeType::Paint(stroke.1.color),
@@ -142,9 +144,9 @@ pub fn update_strokes_system(
                     if stroke.1.timestamp == data.timestamp && stroke.1.id_random == data.id_random
                     {
                         commands.entity(stroke.0).insert(
-                            (ActiveStrokeLifetime {
+                            ActiveStrokeLifetime {
                                 remaining_life: 1.0,
-                            }),
+                            },
                         );
                     }
                 }
@@ -162,6 +164,7 @@ pub fn remove_strokes_system(mut events: EventReader<RemoveStrokeEvent>) {
         let meta = StrokeMetadata {
             timestamp: event.timestamp,
             id_random: event.id_random,
+            source: crate::stroke::StrokeSource::User,
             owner: None,
             origin: Vec2::ZERO,
         };

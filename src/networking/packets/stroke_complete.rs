@@ -15,7 +15,8 @@ impl Packet for StrokeCompleteData {
     fn parse(
         reader: &mut ByteReader,
     ) -> Result<crate::networking::packet::PacketData, std::io::Error> {
-        let result = read_stroke(reader, &None);
+        let result = read_stroke(reader, &None, crate::stroke::StrokeSource::Remote);
+        
         match result {
             Ok(stroke) => Ok(PacketData::StrokeComplete(StrokeCompleteData {
                 data: stroke,

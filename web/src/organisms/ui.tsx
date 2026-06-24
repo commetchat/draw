@@ -120,6 +120,7 @@ const UI: Component<UIProps> = (props) => {
                         <div class="pointer-events-auto flex justify-between gap-2 " style={"margin: 10px; position: absolute; left: 0;"}>
                             <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
                             <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
+                            <md-filled-button onclick={() => postUiMessage({ type: "SaveToBackend" })}> <div class='mx-4' >Save</div></md-filled-button>
                         </div>
 
                         <Show when={gameReady() == false}>

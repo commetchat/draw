@@ -15,7 +15,7 @@ let peerjs_delegate: NetworkDelegate = {
     send_to: function (message: Uint8Array, to: String): void {
         let connection = connections.get(to) as DataConnection;
 
-        if (message.length > 64_000) {
+        if (message.length > 64000) {
             const blob = new Blob([new Uint8Array(message)], {
                 type: "blob"
             });
@@ -33,6 +33,10 @@ let peerjs_delegate: NetworkDelegate = {
     on_peer_connected: null,
     on_peer_disconnected: null,
     on_ready: null,
+    upload_chunk: null,
+    download_chunks: function (chunk_id: string): void {
+        throw new Error('Function not implemented.');
+    }
 }
 
 let game_delegate: GameDelegate = {
