@@ -33,6 +33,8 @@ const UI: Component<UIProps> = (props) => {
     const [currentTool, setCurrentTool] = createSignal("Paintbrush");
     const [saveProgress, setSaveProgress] = useSaveProgress();
 
+    const [fullscreen, setFullscreen] = createSignal(false);
+
     const colorPicker = "ColorPicker";
     const paintbrush = "Paintbrush";
     const showConsole = false;
@@ -118,6 +120,18 @@ const UI: Component<UIProps> = (props) => {
         }
     }
 
+    function toggleFullscreen() {
+        var elem = document.documentElement;
+
+        if(fullscreen()) {
+            document.exitFullscreen();
+            setFullscreen(false);
+        } else {
+            elem.requestFullscreen();
+            setFullscreen(true);
+        }
+    }
+
     return (
         <div style={`--md-sys-color-primary: ${rgb2hex(hsl2rgb(paintColorHsl()[0], 0.2, 0.5))};`}>
             <div style={`--md-sys-color-secondary-container: ${rgb2hex(hsl2rgb(paintColorHsl()[0], 0.3, 0.8))};`}>
@@ -178,6 +192,13 @@ const UI: Component<UIProps> = (props) => {
                         </div>
 
                         <div class="pointer-events-auto flex justify-between gap-2 absolute bottom-0 right-0 m-4 ">
+                            <md-fab aria-label="Fullscreen" onclick={(e) => {
+                                e.preventDefault();
+                                toggleFullscreen();
+                            }}>
+                                <md-icon slot="icon">{fullscreen() ? "fullscreen_exit" : "fullscreen"}</md-icon>
+                            </md-fab>
+
                             <md-fab aria-label="Reset Camera" onclick={(e) => {
                                 e.preventDefault();
                                 return postUiMessage({ type: "ResetCamera" });
