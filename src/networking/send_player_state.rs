@@ -15,8 +15,6 @@ pub fn send_player_state_system(mut events: EventReader<PlayerStateData>) {
     for event in events.read() {
         let packet = PacketData::PlayerState(event.clone());
 
-        for id in Networking::get_currently_connected_peers().iter() {
-            Networking::send_to(id, &packet);
-        }
+        Networking::broadcast(&packet);
     }
 }

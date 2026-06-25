@@ -29,6 +29,9 @@ let embedded_delegate: NetworkDelegate = {
     upload_chunk: null,
     download_chunks: function (chunk_id: string): void {
         throw new Error('Function not implemented.');
+    },
+    broadcast: function (message: Uint8Array): void {
+        throw new Error('Function not implemented.');
     }
 }
 

@@ -16,12 +16,9 @@ import { createMatrixRTCSdk, MatrixRTCSdk } from '../matrixrtc/matrixrtc-sdk.js'
 import { INotifyCapabilitiesActionRequest, IVisibilityActionRequest, MatrixCapabilities, WidgetApi, WidgetApiFromWidgetAction } from 'matrix-widget-api';
 import { UploadQueue } from '../utils/upload_queue';
 import { useSaveProgress } from '..';
+import { base64ToUint8, uint8ToBase64 } from '../utils/b64';
 
 
-let game_delegate: GameDelegate = {
-    on_ready: function (): void {
-    }
-}
 
 interface BackendChunk {
     sender: string,
@@ -31,8 +28,8 @@ interface BackendChunk {
 
 class MatrixRTCDelegate implements NetworkDelegate {
 
-    chunkEventType = "chat.commet.drawinggame.chunk";
-    documentEventType = "chat.commet.drawinggame.document";
+    chunkEventType = "com.lagmachine.drawinggame.chunk";
+    documentEventType = "com.lagmachine.drawinggame.document";
 
     sdk: MatrixRTCSdk
     on_ready: ((user_id: string) => void) | null;
@@ -48,6 +45,58 @@ class MatrixRTCDelegate implements NetworkDelegate {
     pendingChunks: BackendChunk[];
     events: EventTarget;
 
+    onConnectionStatusChanged = (status: any) => {
+        console.log("Connection status changed: ", status);
+    }
+
+    onReceivedData = (data: any) => {
+        console.log("Received data!", data);
+        let from = data.rtcBackendIdentity;
+        var bytes = base64ToUint8(JSON.parse(data.data));
+
+        if (this.on_received != null) {
+            this.on_received!(bytes, from);
+        } else {
+            console.log("No receipt callback!");
+        }
+    }
+
+    connectedMembers: string[] = new Array();
+    onMembersChanged = (data: any[]) => {
+        console.log("Members changed!", data);
+        console.log("Current: ", this.connectedMembers)
+        for (var i = 0; i < data.length; i++) {
+            var d = data[i];
+            var id = d.membership.rtcBackendIdentity;
+
+            if (this.connectedMembers.indexOf(id) == -1) {
+                this.connectedMembers.push(id);
+                console.log("Peer connected! ", id);
+
+                if (this.on_peer_connected != null) {
+                    this.on_peer_connected!(id);
+                }
+            }
+        }
+
+
+    }
+
+    onLocalMembershipChanged = (data: any) => {
+        console.log("Local membership changed: ", data);
+        let localId = data.membership.rtcBackendIdentity
+        console.log("Local member id: ", localId);
+    }
+
+    send_to(message: Uint8Array, to: string) {
+        console.log("Attempting to send data ", message);
+    }
+
+    broadcast(message: Uint8Array) {
+        const text = uint8ToBase64(message);
+        this.sdk.sendData!(text);
+    }
+
     constructor(sdk: MatrixRTCSdk) {
         this.sdk = sdk;
         this.on_peer_connected = null;
@@ -58,11 +107,16 @@ class MatrixRTCDelegate implements NetworkDelegate {
         this.pendingChunks = [];
         this.events = new EventTarget();
 
+        sdk.connected$.subscribe(this.onConnectionStatusChanged.bind(this));
+        sdk.data$.subscribe(this.onReceivedData.bind(this));
+        sdk.members$.subscribe(this.onMembersChanged.bind(this))
+        sdk.localMember$.subscribe(this.onLocalMembershipChanged.bind(this));
+
         this.uploadQueue = new UploadQueue(
             async (item) => {
 
                 console.log("Uploading data for chunk to matrix homeserver", item.id);
-                
+
                 var result = await this.api.uploadFile(item.file.buffer as ArrayBuffer);
 
                 await this.api.sendRoomEvent(this.chunkEventType, {
@@ -87,19 +141,18 @@ class MatrixRTCDelegate implements NetworkDelegate {
         ]
 
     }
-
     download_chunks = async (chunk_id: string) => {
         console.log("Downloading chunks from matrix homeserver", chunk_id);
         console.log(this.pendingChunks);
-        
+
 
         var urls = this.pendingChunks.filter((i) => i.chunk == chunk_id);
         this.pendingChunks = this.pendingChunks.filter((i) => i.chunk != chunk_id);
 
-        for(var i = 0; i < urls.length; i++) {
+        for (var i = 0; i < urls.length; i++) {
             var file = urls[i];
 
-            if(file.chunk == chunk_id) {
+            if (file.chunk == chunk_id) {
                 console.log(file.url);
 
                 var data = await this.api.downloadFile(file.url);
@@ -109,13 +162,10 @@ class MatrixRTCDelegate implements NetworkDelegate {
                 game.load_chunk(array, file.sender);
             }
         }
-        
+
 
     };
 
-    send_to(message: Uint8Array, to: string) {
-
-    }
 
 
     upload_chunk(chunk_id: string, data: Uint8Array) {
@@ -134,6 +184,16 @@ class MatrixRTCDelegate implements NetworkDelegate {
         return this.sdk.widget!.api;
     }
 
+    onGameReady() {
+        console.log("Matrix delegate received game ready signal");
+        console.log(this.connectedMembers);
+
+        for (var i = 0; i < this.connectedMembers.length; i++) {
+            if (this.on_peer_connected != null) {
+                this.on_peer_connected!(this.connectedMembers[i]);
+            }
+        }
+    }
 
     init = async () => {
         this.api.on('action:notify_capabilities', this.onCapabilitiesChanged.bind(this));
@@ -234,18 +294,18 @@ class MatrixRTCDelegate implements NetworkDelegate {
 
         let nextBatch: string | undefined = undefined;
 
-        while(true) {
+        while (true) {
             console.log("Loading batch: ", nextBatch);
             var related = await this.api.readEventRelations(this.documentId, undefined, "m.reference", this.chunkEventType, 100, nextBatch);
             console.log("Got related events: ", related);
 
 
-            for(var i = 0; i < related.chunk.length; i++) {
+            for (var i = 0; i < related.chunk.length; i++) {
                 var chunkEvent = related.chunk[i];
                 var chunk = chunkEvent.content["chunk"];
                 var url = chunkEvent.content["url"];
                 var sender = chunkEvent.sender;
-                
+
                 this.pendingChunks.push({
                     chunk: chunk as string,
                     url: url as string,
@@ -253,7 +313,7 @@ class MatrixRTCDelegate implements NetworkDelegate {
                 })
             }
 
-            if(related.next_batch == null) {
+            if (related.next_batch == null) {
                 break;
             }
 
@@ -270,15 +330,16 @@ class MatrixRTCDelegate implements NetworkDelegate {
 const MatrixWidget: Component = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [delegate, setDelegate] = createSignal<MatrixRTCDelegate | null>(null);
+    const [gameDelegate, setGameDelegate] = createSignal<GameDelegate | null>(null);
 
     const [saveProgress, setSaveProgress] = useSaveProgress();
 
     onMount(async () => {
-        let sdk = await createMatrixRTCSdk("chat.commet.drawinggame")
+        let sdk = await createMatrixRTCSdk("com.lagmachine.drawinggame")
         sdk.join();
 
         let delegate = new MatrixRTCDelegate(sdk);
-        
+
         delegate.events.addEventListener("ready", (ev) => {
             console.log("Delegate is ready!");
             setDelegate(delegate);
@@ -290,20 +351,27 @@ const MatrixWidget: Component = () => {
 
             let queueLength = (ev as CustomEvent).detail.length as number;
 
-            if(queueLength > 0) {
+            if (queueLength > 0) {
                 setSaveProgress("Uploading: " + queueLength.toString());
             } else {
                 setSaveProgress("");
             }
         });
 
+        setGameDelegate({
+            on_ready: () => {
+                console.log("Received ready signal from game!");
+                delegate.onGameReady();
+            }
+        })
+
         await delegate.init();
 
     })
 
     return (
-        <Show when={delegate() != null}>
-            <App instance_id={searchParams.id as string} network_delegate={delegate() as NetworkDelegate} game_delegate={game_delegate} />
+        <Show when={delegate() != null && gameDelegate() != null}>
+            <App instance_id={searchParams.id as string} network_delegate={delegate() as NetworkDelegate} game_delegate={gameDelegate() as GameDelegate} />
         </Show>
     );
 };

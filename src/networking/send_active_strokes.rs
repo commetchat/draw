@@ -26,9 +26,7 @@ pub fn send_active_strokes_system(
                     data: new_point_data.clone(),
                 });
 
-                for id in Networking::get_currently_connected_peers().iter() {
-                    Networking::send_to(id, &packet);
-                }
+                Networking::broadcast(&packet);
             }
             ActiveStrokeEvent::StrokeFinished(stroke_finished_data) => {
                 for stroke in current_strokes.iter_mut() {
@@ -53,9 +51,8 @@ pub fn send_active_strokes_system(
                         };
 
                         let packet = PacketData::StrokeComplete(StrokeCompleteData { data: data });
-                        for id in Networking::get_currently_connected_peers().iter() {
-                            Networking::send_to(id, &packet);
-                        }
+
+                        Networking::broadcast(&packet);
                     }
                 }
             }

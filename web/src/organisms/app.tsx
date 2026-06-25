@@ -69,6 +69,10 @@ class GameUtils {
     this.network_delegate.send_to(data, to);
   }
 
+  web_broadcast(data: Uint8Array) {
+    this.network_delegate.broadcast(data);
+  }
+
   web_load_chunk(id: string) {
     this.network_delegate.download_chunks(id);
   }
@@ -122,6 +126,7 @@ function saveToBackend() {
 
 interface NetworkDelegate {
   send_to: (message: Uint8Array, to: string) => void;
+  broadcast: (message: Uint8Array) => void;
   on_ready: ((user_id: string) => void) | null;
   on_received: ((message: Uint8Array, from: string) => void) | null;
   on_peer_connected: ((from: string) => void) | null;

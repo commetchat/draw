@@ -27,11 +27,27 @@ pub struct Networking;
 extern "C" {
     #[wasm_bindgen(js_namespace = gameUtils)]
     pub fn web_send_packet(to: String, data: Vec<u8>);
+
+    #[wasm_bindgen(js_namespace = gameUtils)]
+    pub fn web_broadcast(data: Vec<u8>);
 }
 
 impl Networking {
     pub fn get_currently_connected_peers() -> Vec<String> {
         return get_currently_connected_peers();
+    }
+
+    pub fn broadcast(data: &PacketData) {
+         let mut writer = ByteWriter::new();
+          match write_packet(&mut writer, data) {
+            Ok(_) => {
+                web_broadcast(writer.as_slice().to_vec());
+            }
+            Err(_) => {
+                info!("Failed to send packet!");
+            }
+        }
+
     }
 
     pub fn send_to(id: &String, data: &PacketData) {

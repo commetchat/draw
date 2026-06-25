@@ -647,11 +647,11 @@ function delete_stroke(id: string) {
         let result = (ev.target as IDBRequest).result as game.StrokeData;
         let chunk = result.chunk_key;
 
-        if(result.source != game.StrokeSource.User) {
+        if(result.source != game.StrokeSource.User && result.source != game.StrokeSource.Remote) {
             console.log("Cannot delete stroke that was not from the user");
             return;
         }
-        
+
         console.log("Exists in chunk: ", chunk);
         console.log("Mesh starts at: ", result.vertex_offset);
         console.log("Num verts: ", result.num_verts);

@@ -119,30 +119,6 @@ fn read_chunk(
 
         for _ in 0..num_strokes {
             let stroke_data = read_stroke(reader, &owner_id, StrokeSource::User)?;
-            // d
-            // if (owner_id == Some("3384a152-6287-4160-b8dd-870a13f3189d".to_string())) {
-            //     continue;
-            // }
-
-            //b
-            // if (owner_id == Some("1f432774-4e0d-436e-abdd-65dfc276c9df".to_string())) {
-            //     continue;
-            // }
-
-            //b
-            // if (owner_id == Some("02210ccb-e051-4cfd-80b2-aceae2afc283".to_string())) {
-            //     continue;
-            // }
-
-            //b
-            // if (owner_id == Some("eab04375-2f9f-4b0a-ae1b-c6d28451a237".to_string())) {
-            //     continue;
-            // }
-
-            //b
-            // if (owner_id == Some("ad465ffc-d6c6-4645-ab49-95a6871fb0a9".to_string())) {
-            //    continue;
-            // }
 
             if stroke_data.metadata.timestamp < 1749429383.719 {
                 continue;

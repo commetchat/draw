@@ -26,8 +26,6 @@ pub fn send_removed_strokes_system(mut events: EventReader<RemoveStrokeEvent>) {
 
         info!("Sending removed stroke packet!");
 
-        for id in Networking::get_currently_connected_peers().iter() {
-            Networking::send_to(id, &packet);
-        }
+        Networking::broadcast(&packet);
     }
 }
