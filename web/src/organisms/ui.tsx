@@ -115,7 +115,7 @@ const UI: Component<UIProps> = (props) => {
     });
 
     function saveToBackend() {
-        if(saveProgress() == "") {
+        if (saveProgress() == "") {
             postUiMessage({ type: "SaveToBackend" });
         }
     }
@@ -123,7 +123,7 @@ const UI: Component<UIProps> = (props) => {
     function toggleFullscreen() {
         var elem = document.documentElement;
 
-        if(fullscreen()) {
+        if (fullscreen()) {
             document.exitFullscreen();
             setFullscreen(false);
         } else {
@@ -138,90 +138,92 @@ const UI: Component<UIProps> = (props) => {
                 <div style={`--md-sys-color-surface-container-high: ${rgb2hex(hsl2rgb(paintColorHsl()[0], 0.3, 0.8))}`}>
 
                     <div class='pointer-events-none' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
+                        <div class='pt-(--safe-area-top) pl-(--safe-area-left) pb-(--safe-area-bottom) pr-(--safe-area-right)'>
 
-                        <div class="pointer-events-auto flex justify-between gap-2 " style={"margin: 10px; position: absolute; left: 0;"}>
-                            <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
-                            <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
-                            <md-filled-button onclick={() => saveToBackend()}> <div class='mx-4' >{saveProgress() == "" ? `Save` : saveProgress()}</div></md-filled-button>
-                        </div>
-
-                        <Show when={gameReady() == false}>
-                            <div class="pointer-events-auto absolute top-1/2 left-1/2">
-                                <md-filled-button> <div class='mx-4' >Getting Ready...</div></md-filled-button>
+                            <div class="pointer-events-auto flex gap-2 " style={"margin: 10px;"}>
+                                <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
+                                <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
+                                <md-filled-button onclick={() => saveToBackend()}> <div class='mx-4' >{saveProgress() == "" ? `Save` : saveProgress()}</div></md-filled-button>
                             </div>
-                        </Show>
+
+                            <Show when={gameReady() == false}>
+                                <div class="pointer-events-auto absolute top-1/2 left-1/2">
+                                    <md-filled-button> <div class='mx-4' >Getting Ready...</div></md-filled-button>
+                                </div>
+                            </Show>
 
 
-                        <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay' style={"filter: drop-shadow(0px 0px 1px gray);"} >
-                            <div style={"margin: 10px; "}>
-                                <md-slider max={500} oninput={(e) => setPaintbrushWidth((e.target as any).value)} value={paintbrushWidth()} ></md-slider>
-                                <ColorPicker onchanged={setPaintColorHsl} hsl={paintColorHsl()}></ColorPicker>
+                            <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay pb-(--safe-area-bottom)' style={"filter: drop-shadow(0px 0px 1px gray);"} >
+                                <div style={"margin: 10px; "}>
+                                    <md-slider max={500} oninput={(e) => setPaintbrushWidth((e.target as any).value)} value={paintbrushWidth()} ></md-slider>
+                                    <ColorPicker onchanged={setPaintColorHsl} hsl={paintColorHsl()}></ColorPicker>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="tool-buttons ml-4 pointer-events-auto absolute top-1/3 bottom-1/2 flex flex-col gap-2">
-                            <div>
-                                <Show when={currentTool() != paintbrush}>
-                                    <md-filled-tonal-icon-button onclick={() => setCurrentTool(paintbrush)}>
-                                        <md-icon>stylus</md-icon>
+                            <div class="tool-buttons ml-4 pointer-events-auto absolute top-1/3 bottom-1/2 flex flex-col gap-2">
+                                <div>
+                                    <Show when={currentTool() != paintbrush}>
+                                        <md-filled-tonal-icon-button onclick={() => setCurrentTool(paintbrush)}>
+                                            <md-icon>stylus</md-icon>
+                                        </md-filled-tonal-icon-button>
+                                    </Show>
+                                    <Show when={currentTool() == paintbrush}>
+                                        <md-filled-icon-button onclick={() => setCurrentTool(paintbrush)}>
+                                            <md-icon className='my-7'>stylus</md-icon>
+                                        </md-filled-icon-button>
+                                    </Show>
+                                </div>
+                                <div>
+                                    <Show when={currentTool() != colorPicker}>
+                                        <md-filled-tonal-icon-button onclick={() => setCurrentTool(colorPicker)}>
+                                            <md-icon>dropper_eye</md-icon>
+                                        </md-filled-tonal-icon-button>
+                                    </Show>
+                                    <Show when={currentTool() == colorPicker}>
+                                        <md-filled-icon-button onclick={() => setCurrentTool(colorPicker)}>
+                                            <md-icon>dropper_eye</md-icon>
+                                        </md-filled-icon-button>
+                                    </Show>
+                                </div>
+                                <div>
+                                    <md-filled-tonal-icon-button>
+                                        <md-icon>comic_bubble</md-icon>
                                     </md-filled-tonal-icon-button>
-                                </Show>
-                                <Show when={currentTool() == paintbrush}>
-                                    <md-filled-icon-button onclick={() => setCurrentTool(paintbrush)}>
-                                        <md-icon className='my-7'>stylus</md-icon>
-                                    </md-filled-icon-button>
-                                </Show>
+                                </div>
                             </div>
-                            <div>
-                                <Show when={currentTool() != colorPicker}>
-                                    <md-filled-tonal-icon-button onclick={() => setCurrentTool(colorPicker)}>
-                                        <md-icon>dropper_eye</md-icon>
-                                    </md-filled-tonal-icon-button>
-                                </Show>
-                                <Show when={currentTool() == colorPicker}>
-                                    <md-filled-icon-button onclick={() => setCurrentTool(colorPicker)}>
-                                        <md-icon>dropper_eye</md-icon>
-                                    </md-filled-icon-button>
-                                </Show>
+
+                            <div class="pointer-events-auto flex justify-between gap-2 absolute bottom-0 pb-(--safe-area-bottom) pr-(--safe-area-right) right-0 m-4 ">
+                                <md-fab aria-label="Fullscreen" onclick={(e) => {
+                                    e.preventDefault();
+                                    toggleFullscreen();
+                                }}>
+                                    <md-icon slot="icon">{fullscreen() ? "fullscreen_exit" : "fullscreen"}</md-icon>
+                                </md-fab>
+
+                                <md-fab aria-label="Reset Camera" onclick={(e) => {
+                                    e.preventDefault();
+                                    return postUiMessage({ type: "ResetCamera" });
+                                }}>
+                                    <md-icon slot="icon">cameraswitch</md-icon>
+                                </md-fab>
+
+                                <md-fab aria-label="Undo" onclick={(e) => {
+                                    e.preventDefault();
+                                    return postUiMessage({ type: "Undo" });
+                                }}>
+                                    <md-icon slot="icon">undo</md-icon>
+                                </md-fab>
                             </div>
-                            <div>
-                                <md-filled-tonal-icon-button>
-                                    <md-icon>comic_bubble</md-icon>
-                                </md-filled-tonal-icon-button>
-                            </div>
-                        </div>
 
-                        <div class="pointer-events-auto flex justify-between gap-2 absolute bottom-0 right-0 m-4 ">
-                            <md-fab aria-label="Fullscreen" onclick={(e) => {
-                                e.preventDefault();
-                                toggleFullscreen();
-                            }}>
-                                <md-icon slot="icon">{fullscreen() ? "fullscreen_exit" : "fullscreen"}</md-icon>
-                            </md-fab>
+                            <Show when={showConsole}>
+                                <div class='text-white text-xs w-lvh h-svh'>
+                                    <textarea class='pointer-events-auto p-20 w-lvh h-1/3' disabled value={getLines()}>
 
-                            <md-fab aria-label="Reset Camera" onclick={(e) => {
-                                e.preventDefault();
-                                return postUiMessage({ type: "ResetCamera" });
-                            }}>
-                                <md-icon slot="icon">cameraswitch</md-icon>
-                            </md-fab>
-
-                            <md-fab aria-label="Undo" onclick={(e) => {
-                                e.preventDefault();
-                                return postUiMessage({ type: "Undo" });
-                            }}>
-                                <md-icon slot="icon">undo</md-icon>
-                            </md-fab>
-                        </div>
-
-                        <Show when={showConsole}>
-                            <div class='text-white text-xs w-lvh h-svh'>
-                                <textarea class='pointer-events-auto p-20 w-lvh h-1/3' disabled value={getLines()}>
-
-                                </textarea>
-                            </div>
-                        </Show>
-                    </div >
+                                    </textarea>
+                                </div>
+                            </Show>
+                        </div >
+                    </div>
                 </div>
             </div>
         </div>

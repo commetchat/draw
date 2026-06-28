@@ -11,6 +11,7 @@ import UI from './organisms/ui';
 import DevUI from './pages/dev-ui';
 import MatrixWidget from './pages/matrix';
 import { Accessor, createSignal, Setter } from 'solid-js';
+import { applySafeArea } from './utils/safe_area';
 
 const root = document.getElementById('root');
 
@@ -22,6 +23,22 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 
 const [saveProgress, setSaveProgress] = createSignal("");
 export const useSaveProgress: () => [Accessor<string>, Setter<string>] = () => [saveProgress, setSaveProgress];
+
+try {
+  const urlParams = new URLSearchParams(window.location.search)
+  console.log(urlParams);
+
+  let safeArea = urlParams.get("safeArea");
+  console.log(safeArea)
+
+  if (safeArea != null && (safeArea.startsWith("$") == false)) {
+    applySafeArea(safeArea);
+  } else {
+    console.log("Not applying safe area")
+  }
+} catch (_) {
+
+}
 
 render(() => <Router>
   <Route path="/" component={Root} />

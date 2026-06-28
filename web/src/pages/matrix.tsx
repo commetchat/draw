@@ -14,15 +14,20 @@ import { useSearchParams } from '@solidjs/router';
 
 import { createMatrixRTCSdk, MatrixRTCSdk } from '../matrixrtc/matrixrtc-sdk.js';
 import { INotifyCapabilitiesActionRequest, IVisibilityActionRequest, MatrixCapabilities, WidgetApi, WidgetApiFromWidgetAction } from 'matrix-widget-api';
-import { UploadQueue } from '../utils/upload_queue';
 import { useSaveProgress } from '..';
 import { base64ToUint8, uint8ToBase64 } from '../utils/b64';
-
+import { AsyncTaskQueue } from '../utils/async_task_queue';
+import { applySafeArea } from '../utils/safe_area';
 
 
 interface BackendChunk {
     sender: string,
     url: string,
+    chunk: string,
+}
+
+interface PendingUpload {
+    data: Uint8Array,
     chunk: string,
 }
 
@@ -40,7 +45,7 @@ class MatrixRTCDelegate implements NetworkDelegate {
     documentId: string | null;
 
     requiredCapabilities: string[];
-    uploadQueue: UploadQueue;
+    uploadQueue: AsyncTaskQueue<PendingUpload>;
 
     pendingChunks: BackendChunk[];
     events: EventTarget;
@@ -111,16 +116,17 @@ class MatrixRTCDelegate implements NetworkDelegate {
         sdk.data$.subscribe(this.onReceivedData.bind(this));
         sdk.members$.subscribe(this.onMembersChanged.bind(this))
         sdk.localMember$.subscribe(this.onLocalMembershipChanged.bind(this));
+        sdk.widget!.api.transport.timeoutSeconds = 30;
 
-        this.uploadQueue = new UploadQueue(
+        this.uploadQueue = new AsyncTaskQueue<PendingUpload>(
             async (item) => {
 
-                console.log("Uploading data for chunk to matrix homeserver", item.id);
+                console.log("Uploading data for chunk to matrix homeserver", item.chunk);
 
-                var result = await this.api.uploadFile(item.file.buffer as ArrayBuffer);
+                var result = await this.api.uploadFile(item.data.buffer as ArrayBuffer);
 
                 await this.api.sendRoomEvent(this.chunkEventType, {
-                    "chunk": item.id,
+                    "chunk": item.chunk,
                     "url": result.content_uri,
                     "m.relates_to": {
                         "event_id": this.documentId!,
@@ -147,34 +153,46 @@ class MatrixRTCDelegate implements NetworkDelegate {
 
 
         var urls = this.pendingChunks.filter((i) => i.chunk == chunk_id);
+
         this.pendingChunks = this.pendingChunks.filter((i) => i.chunk != chunk_id);
 
         for (var i = 0; i < urls.length; i++) {
             var file = urls[i];
 
             if (file.chunk == chunk_id) {
-                console.log(file.url);
+                this.download_chunk_file(file);
+            }
+        }
+    };
 
+    async download_chunk_file(file: BackendChunk) {
+        for (var i = 1; i <= 10; i++) {
+            console.log("Downloading file: ", file.url);
+            console.log("Attempt: " + i.toString() + "/10")
+
+            try {
                 var data = await this.api.downloadFile(file.url);
                 var blob = data.file as Blob;
                 var array = new Uint8Array(await blob.arrayBuffer());
-                console.log()
                 game.load_chunk(array, file.sender);
+                return;
+            } catch (error) {
+                console.log("Error when downloading chunk: " + file.url, error);
             }
         }
 
-
-    };
-
+        // failed to download this chunk, put it back in to the queue to try again later
+        this.pendingChunks.push(file);
+    }
 
 
     upload_chunk(chunk_id: string, data: Uint8Array) {
         console.log("Matrix delegate uploading chunk: ", chunk_id)
         console.log(data);
 
-        this.uploadQueue.enqueue({
-            id: chunk_id,
-            file: data
+        this.uploadQueue.push({
+            chunk: chunk_id,
+            data: data
         })
 
     };
@@ -339,6 +357,17 @@ const MatrixWidget: Component = () => {
         sdk.join();
 
         let delegate = new MatrixRTCDelegate(sdk);
+
+        sdk.widget?.api.on("action:chat.commet.safe_area_changed", (event) => {
+                console.log(event.detail); 
+                let safeArea = event.detail.data["safeArea"];
+                console.log("Received new safe area: ", safeArea);
+
+                if(safeArea != undefined) {
+                    console.log("Applying!")
+                    applySafeArea(safeArea)
+                }
+            });
 
         delegate.events.addEventListener("ready", (ev) => {
             console.log("Delegate is ready!");

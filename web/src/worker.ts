@@ -1,4 +1,5 @@
 import * as game from './bevy/draw-bevy';
+import { AsyncTaskQueue } from './utils/async_task_queue';
 import { BinaryWriter } from './utils/binary_writer';
 import { downloadBlob } from './utils/download';
 import { merge_arrays_uint32, merge_arrays_uint8 } from './utils/merge_arrays';
@@ -205,7 +206,7 @@ function store_multiple_strokes(items: [game.StrokeData]) {
             }
 
 
-            store?.add(result);
+            store?.put(result);
 
             let return_result = {
                 vertex_data: data.vertex_data,
@@ -430,6 +431,7 @@ function writeChunk(chunk_id: string): Promise<ArrayBuffer> {
                 cursor.continue();
             }
             else {
+                tx?.commit();
                 writeStrokes(writer, chunk_id, chunkStrokes)
                 resolve(writer.getBuffer());
             };
@@ -555,86 +557,118 @@ function writeStroke(writer: BinaryWriter, stroke: game.StrokeData) {
     writer.writeBytes(stroke.stroke_data);
 }
 
-function append_chunk_data(data: any) {
-    const tx = db?.transaction([strokes, mesh], "readwrite");
-    console.log("Appending mesh data!");
+interface PendingChunkData {
+    strokes: any,
+    chunk_key: any,
+    index_data: ArrayBuffer,
+    vertex_data: ArrayBuffer,
+    color_data: ArrayBuffer,
+}
 
-    tx!.onerror = (err) => {
-        console.log("Transaction error: ", err);
-    }
+var chunk_queue = new AsyncTaskQueue<PendingChunkData>(append_chunk_data_task);
 
-    console.log("Appending chunk data: ", data);
-    let items = data.strokes;
+function append_chunk_data_task(data: PendingChunkData): Promise<void> {
+    return new Promise(resolve => {
 
-    const store = tx?.objectStore(strokes);
-    let meshes = tx?.objectStore(mesh);
+        console.log("Appending mesh data!", data.chunk_key);
+        
+        const tx = db?.transaction([strokes, mesh], "readwrite");
 
-    let mesh_data_request = meshes!.get(IDBKeyRange.only(data.chunk_key));
-
-    var indices = new Uint32Array(data.index_data);
-    var vertices = new Uint8Array(data.vertex_data);
-    var colors = new Uint8Array(data.color_data);
-
-    let meshData = {
-        chunk_key: data.chunk_key,
-        indices: indices,
-        colors: colors,
-        vertices: vertices,
-    };
-
-    console.log("Initial mesh data: ", meshData);
-    mesh_data_request.onsuccess = (ev) => {
-        let mesh = (ev.target as IDBRequest).result;
-
-        console.log("Got mesh: ", mesh);
-
-        if (mesh != null) {
-            var vertex_offset = mesh.vertices.length / (3 * 4);
-            let arr = Uint32Array.from(indices);
-
-            for (let i = 0; i < arr.length; i++) {
-                arr[i] = arr[i] + vertex_offset;
-            }
-
-            meshData = {
-                chunk_key: data.chunk_key,
-                indices: merge_arrays_uint32(mesh.indices, arr),
-                vertices: merge_arrays_uint8(mesh.vertices, vertices),
-                colors: merge_arrays_uint8(mesh.colors, colors),
-            }
+        tx!.onerror = (err) => {
+            console.log("Transaction error: ", err);
         }
 
-        console.log("Inserting mesh data: ", meshData);
+        console.log("Appending chunk data: ", data);
+        let items = data.strokes;
 
-        meshes?.put(meshData)
+        const store = tx?.objectStore(strokes);
+        let meshes = tx?.objectStore(mesh);
 
-        console.log("Posting new chunk data!");
-        postMessage({
-            type: "loaded_mesh_for_chunk",
-            data: {
-                chunk_key: data.chunk_key,
-                vertex_data: meshData.vertices.buffer,
-                index_data: meshData.indices.buffer,
-                color_data: meshData.colors.buffer,
-            }
-        }, {
-            transfer: [meshData.vertices.buffer, meshData.indices.buffer, meshData.colors.buffer]
-        });
-    }
+        let mesh_data_request = meshes!.get(IDBKeyRange.only(data.chunk_key));
 
-    items.forEach((data: game.StrokeData) => {
-        store?.add({
-            id: data.id,
-            id_random: data.id_random,
+        var indices = new Uint32Array(data.index_data);
+        var vertices = new Uint8Array(data.vertex_data);
+        var colors = new Uint8Array(data.color_data);
+
+        let meshData: any = {
             chunk_key: data.chunk_key,
-            owner_id: data.owner_id,
-            timestamp: data.timestamp,
-            origin_x: data.origin_x,
-            origin_y: data.origin_y,
-            source: data.source,
-            stroke_data: data.stroke_data,
+            indices: indices,
+            colors: colors,
+            vertices: vertices,
+        };
+
+        items.forEach((data: game.StrokeData) => {
+            store?.put({
+                id: data.id,
+                id_random: data.id_random,
+                chunk_key: data.chunk_key,
+                owner_id: data.owner_id,
+                timestamp: data.timestamp,
+                origin_x: data.origin_x,
+                origin_y: data.origin_y,
+                source: data.source,
+                stroke_data: data.stroke_data,
+            });
         });
+
+        console.log("Initial mesh data: ", meshData);
+        mesh_data_request.onsuccess = (ev) => {
+            let mesh = (ev.target as IDBRequest).result;
+
+            console.log("Got mesh: ", mesh);
+
+            if (mesh != null) {
+                var vertex_offset = mesh.vertices.length / (3 * 4);
+                let arr = Uint32Array.from(indices);
+
+                for (let i = 0; i < arr.length; i++) {
+                    arr[i] = arr[i] + vertex_offset;
+                }
+
+                meshData = {
+                    chunk_key: data.chunk_key,
+                    indices: merge_arrays_uint32(mesh.indices, arr),
+                    vertices: merge_arrays_uint8(mesh.vertices, vertices),
+                    colors: merge_arrays_uint8(mesh.colors, colors),
+                }
+            }
+
+            console.log("Inserting mesh data: ", meshData);
+
+            meshes?.put(meshData)
+
+            console.log("Posting new chunk data!");
+            postMessage({
+                type: "loaded_mesh_for_chunk",
+                data: {
+                    chunk_key: data.chunk_key,
+                    vertex_data: meshData.vertices.buffer,
+                    index_data: meshData.indices.buffer,
+                    color_data: meshData.colors.buffer,
+                }
+            }, {
+                transfer: [meshData.vertices.buffer, meshData.indices.buffer, meshData.colors.buffer]
+            });
+
+            tx?.commit();
+            resolve();
+        }
+
+        mesh_data_request.onerror = (ev) => {
+            tx?.commit();
+            resolve();
+        }
     });
+}
+
+function append_chunk_data(data: any) {
+    chunk_queue.push({
+        chunk_key: data.chunk_key,
+        color_data: data.color_data,
+        vertex_data: data.vertex_data,
+        index_data: data.index_data,
+        strokes: data.strokes,
+    })
 }
 
 
@@ -647,7 +681,7 @@ function delete_stroke(id: string) {
         let result = (ev.target as IDBRequest).result as game.StrokeData;
         let chunk = result.chunk_key;
 
-        if(result.source != game.StrokeSource.User && result.source != game.StrokeSource.Remote) {
+        if (result.source != game.StrokeSource.User && result.source != game.StrokeSource.Remote) {
             console.log("Cannot delete stroke that was not from the user");
             return;
         }
@@ -693,6 +727,8 @@ function delete_stroke(id: string) {
                     })
                 }
             }
+
+            tx?.commit();
         }
     }
 }
