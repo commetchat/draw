@@ -6,6 +6,12 @@ import { merge_arrays_uint32, merge_arrays_uint8 } from './utils/merge_arrays';
 
 let db: IDBDatabase | null
 
+console.error = (message, parms) => postAlert(`ERROR: ${message}`)
+
+self.onerror = function(message) {
+  postAlert(`ERROR: ${message}`)
+};
+
 self.onmessage = function (e) {
     if (e.data.type == "init_db") {
         let id = e.data.data;
@@ -736,8 +742,6 @@ function delete_stroke(id: string) {
                     })
                 }
             }
-
-            tx?.commit();
         }
     }
 }
