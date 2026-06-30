@@ -192,8 +192,8 @@ const UI: Component<UIProps> = (props) => {
                                 </div>
                             </div>
 
-                            <div class="pointer-events-auto flex justify-between gap-2 absolute bottom-0 pb-(--safe-area-bottom) pr-(--safe-area-right) right-0 m-4 ">
-                                <md-fab aria-label="Fullscreen" onclick={(e) => {
+                            <div  class="pointer-events-auto flex flex-col items-end justify-between gap-2 absolute bottom-0 pb-(--safe-area-bottom) pr-(--safe-area-right) right-0 m-4 ">
+                                <md-fab  aria-label="Fullscreen" onclick={(e) => {
                                     e.preventDefault();
                                     toggleFullscreen();
                                 }}>
@@ -207,7 +207,7 @@ const UI: Component<UIProps> = (props) => {
                                     <md-icon slot="icon">cameraswitch</md-icon>
                                 </md-fab>
 
-                                <md-fab aria-label="Undo" onclick={(e) => {
+                                <md-fab size="large" class='py-2' aria-label="Undo" onclick={(e) => {
                                     e.preventDefault();
                                     return postUiMessage({ type: "Undo" });
                                 }}>
