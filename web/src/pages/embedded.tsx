@@ -28,10 +28,13 @@ let embedded_delegate: NetworkDelegate = {
     on_ready: null,
     upload_chunk: null,
     download_chunks: function (chunk_id: string): void {
-        throw new Error('Function not implemented.');
+
     },
     broadcast: function (message: Uint8Array): void {
-        throw new Error('Function not implemented.');
+        window.parent.postMessage({
+            "type": "send_to",
+            "body": message
+        });
     }
 }
 

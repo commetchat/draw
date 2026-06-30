@@ -9,3 +9,4 @@ web/src/bevy/draw-bevy.js
 web/src/bevy/draw-bevy.d.ts
 element-call/
 /web/src/matrixrtc
+web/src/bevy/draw-bevy_bg_unoptimized.wasm

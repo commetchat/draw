@@ -1,4 +1,7 @@
-use bevy::ecs::{event::EventReader, system::Query};
+use bevy::{
+    ecs::{event::EventReader, system::Query},
+    log::info,
+};
 
 use crate::{
     active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent},
@@ -7,7 +10,7 @@ use crate::{
         packet::PacketData,
         packets::{new_point::NewPointPacketData, stroke_complete::StrokeCompleteData},
     },
-    stroke::{Stroke, StrokeData, StrokeMetadata},
+    stroke::{Stroke, StrokeData, StrokeMetadata, StrokeSource::User},
 };
 
 pub fn send_active_strokes_system(
@@ -17,16 +20,18 @@ pub fn send_active_strokes_system(
     for event in events.read() {
         match event {
             ActiveStrokeEvent::NewPoint(new_point_data) => {
-                // Dont send events which were sent to us!
-                if new_point_data.owner.is_some() {
-                    continue;
+
+                match new_point_data.source {
+                    User => {
+
+                        let packet = PacketData::NewPoint(NewPointPacketData {
+                            data: new_point_data.clone(),
+                        });
+        
+                        Networking::broadcast(&packet);
+                    },
+                    _ => {}
                 }
-
-                let packet = PacketData::NewPoint(NewPointPacketData {
-                    data: new_point_data.clone(),
-                });
-
-                Networking::broadcast(&packet);
             }
             ActiveStrokeEvent::StrokeFinished(stroke_finished_data) => {
                 for stroke in current_strokes.iter_mut() {
