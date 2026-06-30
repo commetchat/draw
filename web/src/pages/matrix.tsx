@@ -18,6 +18,7 @@ import { useSaveProgress } from '..';
 import { base64ToUint8, uint8ToBase64 } from '../utils/b64';
 import { AsyncTaskQueue } from '../utils/async_task_queue';
 import { applySafeArea } from '../utils/safe_area';
+import { applyMaterialTheme } from '../utils/apply_theme';
 
 
 interface BackendChunk {
@@ -366,6 +367,17 @@ const MatrixWidget: Component = () => {
                 if(safeArea != undefined) {
                     console.log("Applying!")
                     applySafeArea(safeArea)
+                }
+            });
+
+        sdk.widget?.api.on("action:theme_change", (event) => {
+                console.log(event.detail); 
+                let colorScheme = event.detail.data["chat.commet.color_scheme"];
+                console.log("Color scheme: ", colorScheme);
+
+                if(colorScheme != undefined) {
+                    console.log("Applying!")
+                    applyMaterialTheme(colorScheme)
                 }
             });
 

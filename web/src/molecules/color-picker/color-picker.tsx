@@ -81,7 +81,6 @@ const ColorPicker: Component<ColorPickerProps> = (props) => {
             </div>
             <div class='flex-1'>
                 <div class='hue-picker'>
-
                     <md-slider value={h()} max={360} min={0} oninput={hueEvent} onchange={(v) => { hueEvent(v); reportChange() }}></md-slider>
                 </div>
                 <div class='hue-picker ml-2' style={`--md-slider-inactive-track-color: linear-gradient(90deg, hsl(${h()}, 0%, ${l() * 100}%), hsl(${h()}, 50%, ${l() * 100}%), hsl(${h()}, 100%, ${l() * 100}%));`}>

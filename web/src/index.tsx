@@ -12,6 +12,8 @@ import DevUI from './pages/dev-ui';
 import MatrixWidget from './pages/matrix';
 import { Accessor, createSignal, Setter } from 'solid-js';
 import { applySafeArea } from './utils/safe_area';
+import { applyMaterialTheme } from './utils/apply_theme';
+import { applyTheme, argbFromHex, themeFromSourceColor } from '@material/material-color-utilities';
 
 const root = document.getElementById('root');
 
@@ -39,6 +41,28 @@ try {
 } catch (_) {
 
 }
+
+
+try {
+  const urlParams = new URLSearchParams(window.location.search)
+  console.log(urlParams);
+
+  var scheme = urlParams.get("chat.commet.color_scheme");
+  console.log(scheme);
+  let colorScheme = JSON.parse(scheme!)
+
+  console.log(colorScheme)
+
+  applyMaterialTheme(colorScheme);
+
+} catch (_) {
+
+  const theme = themeFromSourceColor(argbFromHex('#0444f2'));
+
+  // Apply the theme to the body by updating custom properties for material tokens
+  applyTheme(theme, { target: document.body, dark: true });
+}
+
 
 render(() => <Router>
   <Route path="/" component={Root} />
