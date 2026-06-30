@@ -1,22 +1,20 @@
 use bevy::{
-    color::Color,
-    ecs::{
-        component::Component,
-        entity::Entity,
-        event::{EventReader, EventWriter},
-        query::With,
-        system::{Commands, Single},
-    },
-    gizmos::gizmos::Gizmos,
-    log::info,
-    math::Vec2,
-    render::camera::Camera,
-    transform::components::GlobalTransform,
-    window::Window,
+    color::Color, ecs::{
+        component::Component, entity::Entity, event::{EventReader, EventWriter}, query::With, system::{Commands, Query, Single},
+    }, gizmos::gizmos::Gizmos, log::info, math::Vec2, render::camera::Camera, transform::components::GlobalTransform, window::Window,
 };
 
 use crate::{
-    active_strokes::active_stroke::{ActiveStrokeEvent, NewPointData, StrokeFinishedData}, retained_view::copy_camera::TargetCamera, stroke::StrokeSource::User, stylus_input::StylusEvent, tools::tools_plugin::ActiveTool, ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, UIMessage}, user_info::UserInfo, utils::{get_random_uint32, get_system_time},
+    active_strokes::active_stroke::{
+        ActiveStroke, ActiveStrokeEvent, NewPointData, StrokeFinishedData,
+    },
+    retained_view::copy_camera::TargetCamera,
+    stroke::StrokeSource::User,
+    stylus_input::StylusEvent,
+    tools::tools_plugin::ActiveTool,
+    ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, UIMessage},
+    user_info::UserInfo,
+    utils::{get_random_uint32, get_system_time},
 };
 
 #[derive(Component, Default, Debug)]
@@ -57,6 +55,7 @@ pub fn paintbrush_system(
     mut active_paintbrush: Single<(&mut ToolPaintBrush, &mut ActiveTool)>,
     mut events: EventReader<StylusEvent>,
     mut stroke_events: EventWriter<ActiveStrokeEvent>,
+    current_strokes: Query<(Entity, &ActiveStroke)>,
     camera_query: Single<(&Camera, &GlobalTransform), With<TargetCamera>>,
     window: Single<&mut Window>,
 ) {
@@ -83,7 +82,11 @@ pub fn paintbrush_system(
         match event {
             StylusEvent::PointerDown(_) => {
                 if active_paintbrush.0.current_stroke_info.is_some() {
-                    finish_stroke(&mut stroke_events, &mut active_paintbrush.0);
+                    finish_stroke(
+                        &mut stroke_events,
+                        &mut active_paintbrush.0,
+                        current_strokes,
+                    );
                 }
 
                 active_paintbrush.0.is_down = true;
@@ -113,7 +116,11 @@ pub fn paintbrush_system(
             }
             StylusEvent::PointerUp(_) => {
                 info!("Got pointer up!");
-                finish_stroke(&mut stroke_events, &mut active_paintbrush.0);
+                finish_stroke(
+                    &mut stroke_events,
+                    &mut active_paintbrush.0,
+                    current_strokes,
+                );
             }
             StylusEvent::PointerMove(_) => match &active_paintbrush.0.current_stroke_info {
                 Some(current) => {
@@ -144,13 +151,38 @@ pub fn paintbrush_system(
     }
 }
 
-fn finish_stroke(stroke_events: &mut EventWriter<ActiveStrokeEvent>, stroke: &mut ToolPaintBrush) {
+fn finish_stroke(
+    stroke_events: &mut EventWriter<ActiveStrokeEvent>,
+    stroke: &mut ToolPaintBrush,
+    current_strokes: Query<(Entity, &ActiveStroke)>,
+) {
     stroke.is_down = false;
     info!("Stroke finished!");
 
     match &stroke.current_stroke_info {
         Some(current) => {
             info!("Owner: {:?}", current.owner);
+
+            for mut active in current_strokes.iter() {
+                if active.1.timestamp == current.timestamp && active.1.id_random == current.id_random {
+                    if active.1.points.len() < 2 {
+                        info!("Stroke was empty, removing active stroke without saving");
+                        stroke_events.write(ActiveStrokeEvent::DeleteActiveStroke(
+                            StrokeFinishedData {
+                                stroke_origin: current.stroke_origin,
+                                timestamp: current.timestamp,
+                                id_random: current.id_random,
+                                source: User,
+                                owner: current.owner.clone(),
+                            },
+                        ));
+
+                        
+                        stroke.current_stroke_info = None;
+                        return;
+                    }
+                }
+            }
 
             stroke_events.write(ActiveStrokeEvent::StrokeFinished(StrokeFinishedData {
                 stroke_origin: current.stroke_origin,

@@ -142,6 +142,10 @@ export class WebDatabase {
             append_mesh_data(message.data.data);
         }
 
+        if(message.data.type == "alert") {
+            window.alert(message.data.data)
+        }
+
         if (message.data.type == "send_to_user") {
             let bytes = new Uint8Array(message.data.data.data); //LOL
             let user = message.data.data.user as string;

@@ -1,29 +1,16 @@
 use bevy::{
-    asset::Assets,
-    color::{ColorToComponents, Saturation},
-    ecs::{
-        entity::Entity,
-        event::EventReader,
-        system::{Commands, Query, ResMut},
-    },
-    log::info,
-    math::Vec2,
-    render::mesh::{Indices, Mesh, Mesh2d},
+    asset::Assets, color::{ColorToComponents, Saturation}, ecs::{
+        entity::Entity, event::{EventReader, EventWriter}, system::{Commands, Query, ResMut},
+    }, log::info, math::Vec2, render::mesh::{Indices, Mesh, Mesh2d},
 };
 
 use crate::{
     active_strokes::{
-        active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent},
-        active_stroke_lifetime::ActiveStrokeLifetime,
-    },
-    database::{
+        active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent, StrokeFinishedData}, active_stroke_lifetime::ActiveStrokeLifetime,
+    }, database::{
         web_database::{delete_stroke, store_multiple_strokes},
         web_stroke_data::JsStrokeData,
-    },
-    line_builder::LineBuilder,
-    mesh_conversion::timestamp_to_z_offset,
-    stroke::{Stroke, StrokeData, StrokeMesh, StrokeMetadata},
-    utils::DEBUG_DRAW,
+    }, line_builder::LineBuilder, mesh_conversion::timestamp_to_z_offset, stroke::{Stroke, StrokeData, StrokeMesh, StrokeMetadata}, utils::DEBUG_DRAW,
 };
 
 pub fn update_strokes_system(
@@ -37,6 +24,9 @@ pub fn update_strokes_system(
     }
 
     for event in events.read() {
+
+        info!("Received active stroke event: {:#?}", event);
+
         match event {
             ActiveStrokeEvent::NewPoint(new_point_data) => {
                 for mut stroke in current_strokes.iter_mut() {
@@ -75,14 +65,9 @@ pub fn update_strokes_system(
                 }
             }
             ActiveStrokeEvent::StrokeFinished(data) => {
-                info!("Got Stroke Finished Event");
                 for mut stroke in current_strokes.iter_mut() {
                     if stroke.1.timestamp == data.timestamp && stroke.1.id_random == data.id_random
                     {
-                        if stroke.1.points.len() < 2 {
-                            continue;
-                        }
-
                         if stroke.1.is_submitted_to_database {
                             continue;
                         }
@@ -116,7 +101,6 @@ pub fn update_strokes_system(
                                 origin: data.stroke_origin,
                                 source: data.source.clone(),
                                 owner: data.owner.clone(),
-
                             },
                             data: StrokeData {
                                 stroke_type: crate::stroke::StrokeType::Paint(stroke.1.color),
@@ -143,11 +127,9 @@ pub fn update_strokes_system(
                 for stroke in current_strokes.iter_mut() {
                     if stroke.1.timestamp == data.timestamp && stroke.1.id_random == data.id_random
                     {
-                        commands.entity(stroke.0).insert(
-                            ActiveStrokeLifetime {
-                                remaining_life: 1.0,
-                            },
-                        );
+                        commands.entity(stroke.0).insert(ActiveStrokeLifetime {
+                            remaining_life: 0.5,
+                        });
                     }
                 }
             }

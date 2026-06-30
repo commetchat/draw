@@ -6,7 +6,7 @@ use bevy::{
 
 use crate::stroke::StrokeSource;
 
-#[derive(Debug, Component)]
+#[derive(Debug, Clone, Component)]
 pub struct ActiveStroke {
     pub timestamp: f64,
     pub id_random: u32,
@@ -31,7 +31,7 @@ pub struct NewPointData {
     pub source: StrokeSource,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StrokeFinishedData {
     pub timestamp: f64,
     pub id_random: u32,

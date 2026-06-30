@@ -128,6 +128,7 @@ function store_multiple_strokes(items: [game.StrokeData]) {
     }
 
     tx!.onerror = (err) => {
+        postAlert(`Transaction error when saving strokes: ${err}`,);
         console.log("Transaction error: ", err);
     }
 
@@ -228,6 +229,7 @@ function store_multiple_strokes(items: [game.StrokeData]) {
     }
 
     mesh_data_request.onerror = (ev) => {
+        postAlert(`Transaction error when saving strokes: ${ev}`,);
         console.log("Failed to get mesh from db")
     }
 }
@@ -352,6 +354,13 @@ async function save_to_backend() {
             transfer: [data]
         })
     }
+}
+
+function postAlert(text: string) {
+    postMessage({
+        type: "alert",
+        data: text
+    })
 }
 
 function getChunkKeys(): Promise<Set<string>> {

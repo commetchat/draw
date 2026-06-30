@@ -1,3 +1,5 @@
+use std::sync::{LazyLock, Mutex};
+
 use bevy::{
     asset::{Assets, RenderAssetUsages},
     ecs::{
@@ -17,6 +19,9 @@ use crate::{
     active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent},
 };
 
+pub static CURRENT_FRAME_SPAWNED_STROKES: LazyLock<Mutex<Vec<ActiveStroke>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
+
 pub fn spawn_strokes_system(
     mut events: EventReader<ActiveStrokeEvent>,
     mut commands: Commands,
@@ -29,12 +34,25 @@ pub fn spawn_strokes_system(
         match event {
             ActiveStrokeEvent::NewPoint(new_point_data) => {
                 let mut exists = false;
+
                 for stroke in current_strokes.iter() {
                     if stroke.timestamp == new_point_data.timestamp
                         && stroke.id_random == new_point_data.id_random
                     {
                         exists = true;
                         break;
+                    }
+                }
+
+                {
+                    let mut vec = CURRENT_FRAME_SPAWNED_STROKES.lock().unwrap();
+                    for stroke in vec.iter() {
+                        if stroke.timestamp == new_point_data.timestamp
+                            && stroke.id_random == new_point_data.id_random
+                        {
+                            exists = true;
+                            break;
+                        }
                     }
                 }
 
@@ -72,6 +90,11 @@ pub fn spawn_strokes_system(
 
                 info!("Spawning new entity for active stroke!");
 
+                {
+                    let mut vec = CURRENT_FRAME_SPAWNED_STROKES.lock().unwrap();
+                    vec.push(stroke.clone());
+                }
+
                 commands.spawn((
                     stroke,
                     NoFrustumCulling {},
@@ -82,5 +105,13 @@ pub fn spawn_strokes_system(
             }
             _ => (),
         }
+    }
+}
+
+pub fn clear_spawned_strokes() {
+    let mut vec = CURRENT_FRAME_SPAWNED_STROKES.lock().unwrap();
+    if vec.is_empty() == false {
+        info!("Cleared spawned strokes list");
+        vec.clear();
     }
 }

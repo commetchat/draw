@@ -23,22 +23,14 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use crate::web_input::WebInput;
 
 use crate::{
-    active_strokes::active_strokes_plugin::ActiveStrokesPlugin,
-    camera_controller::{CameraControllerPlugin, TouchCameraController},
-    chunks::{ChunkController, ChunksPlugin},
-    database::Database,
-    lerp_transform::{LerpTransformPlugin, TargetTransform},
-    networking::networking_plugin::NetworkingPlugin,
-    player_sprite::player_sprite_plugin::PlayerSpritePlugin,
-    retained_view::{
+    active_strokes::active_strokes_plugin::ActiveStrokesPlugin, camera_controller::{CameraControllerPlugin, TouchCameraController}, chunks::{ChunkController, ChunksPlugin}, database::Database, lerp_transform::{LerpTransformPlugin, TargetTransform}, networking::networking_plugin::NetworkingPlugin, player_sprite::player_sprite_plugin::PlayerSpritePlugin, retained_view::{
         RetainedViewPlugin, camera_change_detection::CameraChangeDetector,
         copy_camera::TargetCamera,
-    },
-    stroke::Strokes,
-    stylus_input::StylusInput,
-    tools::tools_plugin::ToolsPlugin,
-    ui::ui_plugin::AppUIPlugin,
+    }, stroke::Strokes, stylus_input::StylusInput, tools::tools_plugin::ToolsPlugin, ui::{debug_ui::{PerfUiPendingStrokes, PendingStrokes}, ui_plugin::AppUIPlugin},
 };
+
+use iyes_perf_ui::prelude::*;
+use iyes_perf_ui::entry::PerfUiEntry;
 
 pub mod camera_controller;
 
@@ -93,7 +85,12 @@ fn main() {
         ..default()
     }))
     .insert_resource(ClearColor(BACKGROUND))
+
     .add_plugins(PerfUiPlugin)
+    
+    .add_perf_ui_simple_entry::<PerfUiPendingStrokes>()
+    .init_resource::<PendingStrokes>()
+
     .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
     .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
     .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
@@ -178,6 +175,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         PerfUiFramerateEntries::default(),
         PerfUiEntryEntityCount::default(),
+        PerfUiPendingStrokes,
         RenderLayers::layer(RENDER_LAYER_HUD),
     ));
 }
