@@ -142,7 +142,7 @@ const UI: Component<UIProps> = (props) => {
         <div class='pointer-events-none' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
             <div class='pt-(--safe-area-top) pl-(--safe-area-left) pb-(--safe-area-bottom) pr-(--safe-area-right)'>
 
-                <div class="pointer-events-auto flex gap-2 " style={"margin: 10px;"}>
+                <div class="pointer-events-auto flex gap-4 " style={"margin: 10px;"}>
                     <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
                     <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
                     <md-filled-button onclick={() => saveToBackend()}> <div class='mx-4' >{saveProgress() == "" ? `Save` : saveProgress()}</div></md-filled-button>
@@ -162,7 +162,7 @@ const UI: Component<UIProps> = (props) => {
                     </div>
                 </div>
 
-                <div class="tool-buttons ml-4 pointer-events-auto absolute top-1/3 bottom-1/2 flex flex-col gap-2">
+                <div class="tool-buttons ml-4 pointer-events-auto absolute top-1/3 bottom-1/2 flex flex-col gap-4">
                     <div>
                         <Show when={currentTool() != paintbrush}>
                             <md-filled-tonal-icon-button onclick={() => setCurrentTool(paintbrush)}>
@@ -194,7 +194,7 @@ const UI: Component<UIProps> = (props) => {
                     </div>
                 </div>
 
-                <div class="pointer-events-auto flex flex-col items-end justify-between gap-2 absolute bottom-0 pb-(--safe-area-bottom) pr-(--safe-area-right) right-0 m-4 ">
+                <div class="pointer-events-auto flex flex-col items-end justify-between gap-4 absolute bottom-0 pb-(--safe-area-bottom) pr-(--safe-area-right) right-0 m-4 ">
                     <md-fab variant="secondary" aria-label="Fullscreen" onclick={(e) => {
                         e.preventDefault();
                         toggleFullscreen();
@@ -209,7 +209,7 @@ const UI: Component<UIProps> = (props) => {
                         <md-icon slot="icon">cameraswitch</md-icon>
                     </md-fab>
 
-                    <md-fab variant='tertiary'  size="large" class='py-2' aria-label="Undo" onclick={(e) => {
+                    <md-fab variant='tertiary' size="large" aria-label="Undo" onclick={(e) => {
                         e.preventDefault();
                         return postUiMessage({ type: "Undo" });
                     }}>
