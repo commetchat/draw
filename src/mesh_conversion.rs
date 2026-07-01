@@ -5,12 +5,12 @@ use crate::{BACKGROUND, line_builder::LineBuilder, stroke::{Stroke, StrokeType}}
 pub fn timestamp_to_z_offset(timestamp: f64, stroke_type: &StrokeType) -> f32 {
     const SECONDS_PER_YEAR: f64 = 31556952.0;
     const START_TIME: f64 = 1740000000.0;
-    const END_TIME: f64 = START_TIME + (SECONDS_PER_YEAR * 20.0);
+    const END_TIME: f64 = START_TIME + (SECONDS_PER_YEAR * 10.0);
 
     let z_offset = inverse_lerp(START_TIME, END_TIME, timestamp);
 
     let z_offset = match stroke_type {
-        crate::stroke::StrokeType::LineArt(_) => lerp(0.5, 1.0, z_offset ),
+        crate::stroke::StrokeType::LineArt(_) => lerp(0.5, 0.95, z_offset ),
         crate::stroke::StrokeType::LegacyEraser => lerp(0.0, 0.5, z_offset ),
         crate::stroke::StrokeType::Paint(_) => lerp(0.0, 0.5, z_offset ),
     };

@@ -27,7 +27,7 @@ pub fn handle_player_state_system(
 
                     let rotation = Quat::from_rotation_z(player_state_data.rotation);
 
-                    sprite.1.transform.translation = player_state_data.position.xyx().with_z(0.0);
+                    sprite.1.transform.translation = player_state_data.position.xyx().with_z(999.0);
                     sprite.1.transform.rotation = rotation;
                 }
             }

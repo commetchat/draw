@@ -23,7 +23,7 @@ fn fragment(mesh: VertexOutput) -> FragOut {
         // this is line art
         if(shader_flags[1] == 2) {
             // actively drawn line art should be on top of everything
-            out.depth = 1.0;
+            out.depth = 0.95;
         }
 
         // this is paint tool

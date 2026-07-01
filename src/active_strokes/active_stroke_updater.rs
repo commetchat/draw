@@ -183,7 +183,7 @@ fn active_stroke_to_mesh(
     let mut builder = LineBuilder::new_with(stroke.points.clone(), stroke.pressures.clone());
 
     let z_offset = timestamp_to_z_offset(stroke.timestamp, &stroke.stroke_type);
-
+    info!("Z Offset: {}", z_offset);
     let mut colors = Vec::<[f32; 4]>::new();
     let mut vertices = Vec::<[f32; 3]>::new();
 

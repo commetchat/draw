@@ -51,11 +51,6 @@ impl Packet for NewPointPacketData {
             }
         };
 
-        let r = reader.read_u8()?;
-        let g = reader.read_u8()?;
-        let b = reader.read_u8()?;
-        let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
-
         let point_x = reader.read_f32()?;
         let point_y = reader.read_f32()?;
 
