@@ -1,7 +1,18 @@
 use bevy::{
-    color::Color, ecs::{
-        component::Component, entity::Entity, event::{EventReader, EventWriter}, query::With, system::{Commands, Query, Single},
-    }, gizmos::gizmos::Gizmos, log::info, math::Vec2, render::camera::Camera, transform::components::GlobalTransform, window::Window,
+    color::Color,
+    ecs::{
+        component::Component,
+        entity::Entity,
+        event::{EventReader, EventWriter},
+        query::With,
+        system::{Commands, Query, Single},
+    },
+    gizmos::gizmos::Gizmos,
+    log::info,
+    math::Vec2,
+    render::camera::Camera,
+    transform::components::GlobalTransform,
+    window::Window,
 };
 
 use crate::{
@@ -9,17 +20,17 @@ use crate::{
         ActiveStroke, ActiveStrokeEvent, NewPointData, StrokeFinishedData,
     },
     retained_view::copy_camera::TargetCamera,
-    stroke::StrokeSource::User,
+    stroke::{StrokeSource::User, StrokeType},
     stylus_input::StylusEvent,
     tools::tools_plugin::ActiveTool,
-    ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, UIMessage},
+    ui::ui_messages::{PaintbrushArgs, ReceivedUIMessage, Tool, UIMessage},
     user_info::UserInfo,
     utils::{get_random_uint32, get_system_time},
 };
 
 #[derive(Component, Default, Debug)]
 pub struct ToolPaintBrush {
-    pub args: PaintbrushArgs,
+    pub args: Tool,
     pub last_pos: Vec2,
     pub last_pos_screenspace: Vec2,
     pub last_pressure: f32,
@@ -32,10 +43,30 @@ pub fn paintbrush_gizmo_system(
     camera_query: Single<(&Camera, &GlobalTransform), With<TargetCamera>>,
     mut gizmos: Gizmos,
 ) {
-    let col = active_paintbrush.0.args.color;
+    let col = match &active_paintbrush.0.args {
+        Tool::LineArt(line_art_args) => {
+            line_art_args.color
+        },
+        Tool::Paintbrush(paintbrush_args) => {
+            paintbrush_args.color
+        },
+        _ => panic!()
+    };
+    
+
+    let width = match &active_paintbrush.0.args {
+        Tool::LineArt(line_art_args) => {
+            line_art_args.width
+        },
+        Tool::Paintbrush(paintbrush_args) => {
+            paintbrush_args.width
+        },
+        _ => panic!()
+    };
+        
     let pos = active_paintbrush.0.last_pos;
 
-    let mut radius = active_paintbrush.0.args.width / 2.0;
+    let mut radius = width / 2.0;
     let zoom = camera_query.1.scale();
 
     radius *= zoom.x;
@@ -89,17 +120,34 @@ pub fn paintbrush_system(
                     );
                 }
 
+                let col = match &active_paintbrush.0.args {
+                    Tool::Paintbrush(paintbrush_args) => paintbrush_args.color,
+                    Tool::LineArt(line_art_args) => line_art_args.color,
+                    _ => panic!(),
+                };
+
+                let col = Color::srgb(col[0], col[1], col[2]);
+
+                let width = match &active_paintbrush.0.args {
+                    Tool::Paintbrush(paintbrush_args) => paintbrush_args.width,
+                    Tool::LineArt(line_art_args) => line_art_args.width,
+                    _ => panic!(),
+                };
+
                 active_paintbrush.0.is_down = true;
                 let timestamp = get_system_time();
                 let id_random = get_random_uint32();
-                let col = active_paintbrush.0.args.color;
 
-                let width = active_paintbrush.0.args.width * camera_query.1.scale().x;
+                let width = width * camera_query.1.scale().x;
 
                 let info = NewPointData {
                     timestamp: timestamp,
                     id_random: id_random,
-                    color: Color::srgb(col[0], col[1], col[2]),
+                    stroke_type: match &active_paintbrush.0.args {
+                        Tool::Paintbrush(_) => StrokeType::Paint(col),
+                        Tool::LineArt(_) => StrokeType::LineArt(col),
+                        _ => panic!(),
+                    },
                     stroke_origin: world_pos,
                     point: world_pos,
                     width: width,
@@ -129,11 +177,23 @@ pub fn paintbrush_system(
                         continue;
                     }
 
+                    let col = match &active_paintbrush.0.args {
+                        Tool::Paintbrush(paintbrush_args) => paintbrush_args.color,
+                        Tool::LineArt(line_art_args) => line_art_args.color,
+                        _ => panic!(),
+                    };
+
+                    let col = Color::srgb(col[0], col[1], col[2]);
+
                     stroke_events.write(ActiveStrokeEvent::NewPoint(NewPointData {
                         stroke_origin: current.stroke_origin,
                         timestamp: current.timestamp,
                         id_random: current.id_random,
-                        color: current.color,
+                        stroke_type: match &active_paintbrush.0.args {
+                            Tool::Paintbrush(_) => StrokeType::Paint(col),
+                            Tool::LineArt(_) => StrokeType::LineArt(col),
+                            _ => panic!(),
+                        },
                         point: world_pos,
                         width: current.width,
                         owner: Some(UserInfo::get_user_id()),
@@ -164,7 +224,9 @@ fn finish_stroke(
             info!("Owner: {:?}", current.owner);
 
             for mut active in current_strokes.iter() {
-                if active.1.timestamp == current.timestamp && active.1.id_random == current.id_random {
+                if active.1.timestamp == current.timestamp
+                    && active.1.id_random == current.id_random
+                {
                     if active.1.points.len() < 2 {
                         info!("Stroke was empty, removing active stroke without saving");
                         stroke_events.write(ActiveStrokeEvent::DeleteActiveStroke(
@@ -177,7 +239,6 @@ fn finish_stroke(
                             },
                         ));
 
-                        
                         stroke.current_stroke_info = None;
                         return;
                     }
@@ -208,8 +269,13 @@ pub fn paintbrush_ui_system(
     for event in events.read() {
         match &event.data {
             UIMessage::SetTool(tool) => match tool {
-                crate::ui::ui_messages::Tool::Paintbrush(paintbrush_args) => {
-                    paintbrush.1.args = paintbrush_args.clone();
+                Tool::Paintbrush(paintbrush_args) => {
+                    paintbrush.1.args = Tool::Paintbrush(paintbrush_args.clone());
+                    info!("Received set tool event!, inserting active tool to paintbrush");
+                    commands.entity(paintbrush.0).insert_if_new(ActiveTool {});
+                }
+                Tool::LineArt(lineart_args) => {
+                    paintbrush.1.args = Tool::LineArt(lineart_args.clone());
                     info!("Received set tool event!, inserting active tool to paintbrush");
                     commands.entity(paintbrush.0).insert_if_new(ActiveTool {});
                 }

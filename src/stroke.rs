@@ -7,18 +7,18 @@ use bevy::{
 use binary_util::{ByteReader, ByteWriter};
 use safe_transmute::{SingleManyGuard, base::transmute_many, transmute_to_bytes};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum StrokeType {
+    LineArt(Color),
+    LegacyEraser,
     Paint(Color),
-    Eraser,
 }
-
 
 #[derive(Debug, Clone)]
 pub enum StrokeSource {
     User,
     Storage,
-    Remote
+    Remote,
 }
 
 #[derive(Clone)]
@@ -58,7 +58,15 @@ impl StrokeData {
                 let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
                 StrokeType::Paint(col)
             }
-            2 => StrokeType::Eraser,
+            2 => StrokeType::LegacyEraser,
+            3 => {
+                let r = reader.read_u8().unwrap();
+                let g = reader.read_u8().unwrap();
+                let b = reader.read_u8().unwrap();
+
+                let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
+                StrokeType::LineArt(col)
+            }
             _ => {
                 panic!();
             }
@@ -98,8 +106,13 @@ impl StrokeData {
                 let color = color.to_srgba().to_u8_array_no_alpha();
                 writer.write(&color);
             }
-            StrokeType::Eraser => {
+            StrokeType::LegacyEraser => {
                 writer.write_u8(2);
+            }
+            StrokeType::LineArt(color) => {
+                writer.write_u8(3);
+                let color = color.to_srgba().to_u8_array_no_alpha();
+                writer.write(&color);
             }
         }
 

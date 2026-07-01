@@ -4,8 +4,10 @@ export type Color = { r: number, g: number, b: number, };
 
 export type EraserArgs = { width: number, };
 
+export type LineArtArgs = { width: number, color: [number, number, number], };
+
 export type PaintbrushArgs = { width: number, color: [number, number, number], };
 
-export type Tool = { "tool": "Paintbrush" } & PaintbrushArgs | { "tool": "Eraser" } & EraserArgs | { "tool": "ColorPicker" };
+export type Tool = { "tool": "LineArt" } & LineArtArgs | { "tool": "Paintbrush" } & PaintbrushArgs | { "tool": "Eraser" } & EraserArgs | { "tool": "ColorPicker" };
 
 export type UIMessage = { "type": "LoadFile" } | { "type": "SaveFile" } | { "type": "SaveToBackend" } | { "type": "SetTool" } & Tool | { "type": "SetColor" } & Color | { "type": "Undo" } | { "type": "Redo" } | { "type": "ResetCamera" } | { "type": "GameReady" };

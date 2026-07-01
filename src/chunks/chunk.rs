@@ -11,18 +11,12 @@ use bevy::{
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    CustomMaterial, RENDER_LAYER_BATCH_STROKES,
-    active_strokes::active_stroke::{ActiveStrokeEvent, StrokeFinishedData},
-    chunks::{CHUNK_SIZE, ChunkEvent},
-    database::{
+    CustomMaterial, RENDER_LAYER_BATCH_STROKES, ShaderFlags, active_strokes::active_stroke::{ActiveStrokeEvent, StrokeFinishedData}, chunks::{CHUNK_SIZE, ChunkEvent}, database::{
         APPEND_STROKE_DATAS, CHUNKS_NEED_RELOADING, DATABASE_READY, LOAD_MESH_QUEUE,
         REMOVE_CHUNK_VERTS,
         web_database::load_mesh_for_chunk,
         web_stroke_data::{JSStrokeSource, JsMeshData},
-    },
-    retained_view::copy_camera::RetainedViewEvent,
-    stroke::{StrokeMesh, StrokeSource},
-    utils::{DEBUG_DRAW, now},
+    }, retained_view::copy_camera::RetainedViewEvent, stroke::{StrokeMesh, StrokeSource}, utils::{DEBUG_DRAW, now},
 };
 
 #[derive(Component, Default)]
@@ -105,7 +99,12 @@ pub fn chunk_spawn_system(
                     RenderLayers::from_layers(&[RENDER_LAYER_BATCH_STROKES]),
                     NoFrustumCulling {},
                     Mesh2d(handle),
-                    MeshMaterial2d(materials.add(CustomMaterial {})),
+                    MeshMaterial2d(materials.add(CustomMaterial {
+                         flags: ShaderFlags{
+                            is_active_stroke: 0,
+                            ..default()
+                         }
+                    })),
                 ));
             }
             ChunkEvent::NotVisible(id) => {

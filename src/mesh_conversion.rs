@@ -1,19 +1,28 @@
-use bevy::color::ColorToComponents;
+use bevy::{color::ColorToComponents, log::info};
 
-use crate::{BACKGROUND, line_builder::LineBuilder, stroke::Stroke};
+use crate::{BACKGROUND, line_builder::LineBuilder, stroke::{Stroke, StrokeType}};
 
-pub fn timestamp_to_z_offset(timestamp: f64) -> f32 {
+pub fn timestamp_to_z_offset(timestamp: f64, stroke_type: &StrokeType) -> f32 {
     const SECONDS_PER_YEAR: f64 = 31556952.0;
     const START_TIME: f64 = 1740000000.0;
     const END_TIME: f64 = START_TIME + (SECONDS_PER_YEAR * 20.0);
 
     let z_offset = inverse_lerp(START_TIME, END_TIME, timestamp);
 
+    let z_offset = match stroke_type {
+        crate::stroke::StrokeType::LineArt(_) => lerp(0.5, 1.0, z_offset ),
+        crate::stroke::StrokeType::LegacyEraser => lerp(0.0, 0.5, z_offset ),
+        crate::stroke::StrokeType::Paint(_) => lerp(0.0, 0.5, z_offset ),
+    };
     return z_offset as f32;
 }
 
 fn inverse_lerp(a: f64, b: f64, v: f64) -> f64 {
     (v - a) / (b - a)
+}
+
+fn lerp(a: f64, b: f64, v: f64) -> f64 {
+   a * (1.0 - v) + b * v
 }
 
 pub fn stroke_to_mesh(stroke: &Stroke) -> (Vec<[f32; 3]>, Vec<[f32; 4]>, Vec<u32>) {
@@ -26,11 +35,13 @@ pub fn stroke_to_mesh(stroke: &Stroke) -> (Vec<[f32; 3]>, Vec<[f32; 4]>, Vec<u32
 
     builder.width = stroke.data.width;
     builder.default_color = match stroke.data.stroke_type {
+        crate::stroke::StrokeType::LineArt(color) => color,
+        crate::stroke::StrokeType::LegacyEraser => BACKGROUND,
         crate::stroke::StrokeType::Paint(color) => color,
-        crate::stroke::StrokeType::Eraser => BACKGROUND,
     };
 
-    let z_offset = timestamp_to_z_offset(stroke.metadata.timestamp);
+
+    let z_offset = timestamp_to_z_offset(stroke.metadata.timestamp, &stroke.data.stroke_type);
 
     let mut colors = Vec::<[f32; 4]>::new();
     let mut vertices = Vec::<[f32; 3]>::new();

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = {version = "0.16.1", default-features = false, features = ["bevy_gizmos", "bevy_asset", "bevy_color", "bevy_core_pipeline", "bevy_log", "bevy_render", "bevy_scene", "bevy_sprite", "bevy_text", "bevy_ui", "bevy_window", "bevy_winit", "png", "webgl2", "default_font", "bevy_pbr"]}
+bevy = {version = "0.16.1", default-features = false, features = ["bevy_gizmos", "bevy_asset", "bevy_color", "bevy_core_pipeline", "bevy_log", "bevy_render", "bevy_scene", "bevy_sprite", "bevy_text", "bevy_ui", "bevy_window", "bevy_winit", "png", "webgl2", "x11", "default_font", "bevy_pbr"]}
 bevy_embedded_assets = "0.13.0"
 binary-util = "0.3.4"
 bincode = "2.0.1"

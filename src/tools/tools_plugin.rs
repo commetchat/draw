@@ -11,8 +11,7 @@ use crate::{
             ToolPaintBrush, paintbrush_gizmo_system, paintbrush_system, paintbrush_ui_system,
         },
         undo::{store_undo_strokes_system, undo_ui_system},
-    },
-    ui::ui_messages::PaintbrushArgs,
+    }, ui::ui_messages::{LineArtArgs, PaintbrushArgs, Tool},
 };
 
 pub struct ToolsPlugin;
@@ -37,11 +36,11 @@ impl Plugin for ToolsPlugin {
 fn setup(mut commands: Commands) {
     commands.spawn((
         ToolPaintBrush {
-            args: PaintbrushArgs {
+            args: Tool::LineArt(LineArtArgs {
                 width: 10.0,
                 color: [1.0, 0.0, 0.0],
                 ..default()
-            },
+            }),
             ..default()
         },
         ActiveTool {},

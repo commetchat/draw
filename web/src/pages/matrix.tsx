@@ -360,26 +360,26 @@ const MatrixWidget: Component = () => {
         let delegate = new MatrixRTCDelegate(sdk);
 
         sdk.widget?.api.on("action:chat.commet.safe_area_changed", (event) => {
-                console.log(event.detail); 
-                let safeArea = event.detail.data["safeArea"];
-                console.log("Received new safe area: ", safeArea);
+            console.log(event.detail);
+            let safeArea = event.detail.data["safeArea"];
+            console.log("Received new safe area: ", safeArea);
 
-                if(safeArea != undefined) {
-                    console.log("Applying!")
-                    applySafeArea(safeArea)
-                }
-            });
+            if (safeArea != undefined) {
+                console.log("Applying!")
+                applySafeArea(safeArea)
+            }
+        });
 
         sdk.widget?.api.on("action:theme_change", (event) => {
-                console.log(event.detail); 
-                let colorScheme = event.detail.data["chat.commet.color_scheme"];
-                console.log("Color scheme: ", colorScheme);
+            console.log(event.detail);
+            let colorScheme = event.detail.data["chat.commet.color_scheme"];
+            console.log("Color scheme: ", colorScheme);
 
-                if(colorScheme != undefined) {
-                    console.log("Applying!")
-                    applyMaterialTheme(colorScheme)
-                }
-            });
+            if (colorScheme != undefined) {
+                console.log("Applying!")
+                applyMaterialTheme(colorScheme)
+            }
+        });
 
         delegate.events.addEventListener("ready", (ev) => {
             console.log("Delegate is ready!");

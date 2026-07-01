@@ -1,16 +1,30 @@
 use bevy::{
-    asset::Assets, color::{ColorToComponents, Saturation}, ecs::{
-        entity::Entity, event::{EventReader, EventWriter}, system::{Commands, Query, ResMut},
-    }, log::info, math::Vec2, render::mesh::{Indices, Mesh, Mesh2d},
+    asset::Assets,
+    color::{ColorToComponents, Saturation},
+    ecs::{
+        entity::Entity,
+        event::{EventReader, EventWriter},
+        system::{Commands, Query, ResMut},
+    },
+    log::info,
+    math::Vec2,
+    render::mesh::{Indices, Mesh, Mesh2d},
 };
 
 use crate::{
+    BACKGROUND,
     active_strokes::{
-        active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent, StrokeFinishedData}, active_stroke_lifetime::ActiveStrokeLifetime,
-    }, database::{
+        active_stroke::{ActiveStroke, ActiveStrokeEvent, RemoveStrokeEvent, StrokeFinishedData},
+        active_stroke_lifetime::ActiveStrokeLifetime,
+    },
+    database::{
         web_database::{delete_stroke, store_multiple_strokes},
         web_stroke_data::JsStrokeData,
-    }, line_builder::LineBuilder, mesh_conversion::timestamp_to_z_offset, stroke::{Stroke, StrokeData, StrokeMesh, StrokeMetadata}, utils::DEBUG_DRAW,
+    },
+    line_builder::LineBuilder,
+    mesh_conversion::timestamp_to_z_offset,
+    stroke::{Stroke, StrokeData, StrokeMesh, StrokeMetadata},
+    utils::DEBUG_DRAW,
 };
 
 pub fn update_strokes_system(
@@ -24,7 +38,6 @@ pub fn update_strokes_system(
     }
 
     for event in events.read() {
-
         info!("Received active stroke event: {:#?}", event);
 
         match event {
@@ -103,7 +116,7 @@ pub fn update_strokes_system(
                                 owner: data.owner.clone(),
                             },
                             data: StrokeData {
-                                stroke_type: crate::stroke::StrokeType::Paint(stroke.1.color),
+                                stroke_type: stroke.1.stroke_type.clone(),
                                 width: stroke.1.width,
                                 points: stroke.1.points.clone(),
                                 pressures: pressures,
@@ -128,7 +141,7 @@ pub fn update_strokes_system(
                     if stroke.1.timestamp == data.timestamp && stroke.1.id_random == data.id_random
                     {
                         commands.entity(stroke.0).insert(ActiveStrokeLifetime {
-                            remaining_life: 0.5,
+                            remaining_life: 0.1,
                         });
                     }
                 }
@@ -169,7 +182,7 @@ fn active_stroke_to_mesh(
 ) {
     let mut builder = LineBuilder::new_with(stroke.points.clone(), stroke.pressures.clone());
 
-    let z_offset = timestamp_to_z_offset(stroke.timestamp);
+    let z_offset = timestamp_to_z_offset(stroke.timestamp, &stroke.stroke_type);
 
     let mut colors = Vec::<[f32; 4]>::new();
     let mut vertices = Vec::<[f32; 3]>::new();
@@ -177,9 +190,18 @@ fn active_stroke_to_mesh(
     builder.width = stroke.width;
 
     builder.default_color = if debug {
-        stroke.color.with_saturation(0.1)
+        match stroke.stroke_type {
+            crate::stroke::StrokeType::LineArt(color) => color,
+            crate::stroke::StrokeType::LegacyEraser => BACKGROUND,
+            crate::stroke::StrokeType::Paint(color) => color,
+        }
+        .with_saturation(0.1)
     } else {
-        stroke.color
+        match stroke.stroke_type {
+            crate::stroke::StrokeType::LineArt(color) => color,
+            crate::stroke::StrokeType::LegacyEraser => BACKGROUND,
+            crate::stroke::StrokeType::Paint(color) => color,
+        }
     };
 
     builder.build();

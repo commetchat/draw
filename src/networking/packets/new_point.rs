@@ -1,4 +1,3 @@
-
 use bevy::{
     color::{Color, ColorToPacked, Srgba},
     math::Vec2,
@@ -6,7 +5,7 @@ use bevy::{
 use binary_util::ByteReader;
 
 use crate::{
-    active_strokes::active_stroke::NewPointData, networking::{packet::PacketData, packets::Packet}, stroke::StrokeSource,
+    active_strokes::active_stroke::NewPointData, networking::{packet::PacketData, packets::Packet}, stroke::{StrokeSource, StrokeType},
 };
 
 #[derive(Clone)]
@@ -24,17 +23,44 @@ impl Packet for NewPointPacketData {
         let origin_x = reader.read_f32()?;
         let origin_y = reader.read_f32()?;
 
+        let stroke_type = reader.read_u8()?;
+
+        let stroke_type = match stroke_type {
+            0 => {
+                let r = reader.read_u8()?;
+                let g = reader.read_u8()?;
+                let b = reader.read_u8()?;
+                let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
+                StrokeType::LineArt(col)
+            }
+            1 => {
+                StrokeType::LegacyEraser
+            }
+            2 => {
+                let r = reader.read_u8()?;
+                let g = reader.read_u8()?;
+                let b = reader.read_u8()?;
+                let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
+                StrokeType::Paint(col)
+            }
+            _ => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Invalid stroke type",
+                ));
+            }
+        };
+
         let r = reader.read_u8()?;
         let g = reader.read_u8()?;
         let b = reader.read_u8()?;
+        let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
 
         let point_x = reader.read_f32()?;
         let point_y = reader.read_f32()?;
 
         let width = reader.read_f32()?;
         let pressure = reader.read_f32()?;
-
-        let col = Color::Srgba(Srgba::from_u8_array_no_alpha([r, g, b]));
 
         Ok(PacketData::NewPoint(NewPointPacketData {
             data: NewPointData {
@@ -44,7 +70,7 @@ impl Packet for NewPointPacketData {
                     x: origin_x,
                     y: origin_y,
                 },
-                color: col,
+                stroke_type: stroke_type,
                 point: Vec2 {
                     x: point_x,
                     y: point_y,
@@ -64,8 +90,23 @@ impl Packet for NewPointPacketData {
         writer.write_f32(self.data.stroke_origin.x)?;
         writer.write_f32(self.data.stroke_origin.y)?;
 
-        let color = self.data.color.to_srgba().to_u8_array_no_alpha();
-        writer.write(&color)?;
+        match self.data.stroke_type {
+            crate::stroke::StrokeType::LineArt(color) => {
+                writer.write_u8(0);
+
+                let color = color.to_srgba().to_u8_array_no_alpha();
+                writer.write(&color)?;
+            }
+            crate::stroke::StrokeType::LegacyEraser => {
+                writer.write_u8(1);
+            }
+            crate::stroke::StrokeType::Paint(color) => {
+                writer.write_u8(2);
+
+                let color = color.to_srgba().to_u8_array_no_alpha();
+                writer.write(&color)?;
+            }
+        }
 
         writer.write_f32(self.data.point.x)?;
         writer.write_f32(self.data.point.y)?;

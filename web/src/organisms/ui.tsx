@@ -28,17 +28,20 @@ interface UIDelegate {
 }
 
 const UI: Component<UIProps> = (props) => {
+    const colorPicker = "ColorPicker";
+    const paintbrush = "Paintbrush";
+    const lineArt = "LineArt";
+    const showConsole = false;
+
     const [gameReady, setGameReady] = createSignal(false);
     const [paintColorHsl, setPaintColorHsl] = createSignal<[number, number, number]>([0, 1.0, 0.5])
     const [paintbrushWidth, setPaintbrushWidth] = createSignal(10.0);
-    const [currentTool, setCurrentTool] = createSignal("Paintbrush");
+    const [currentTool, setTool] = createSignal(lineArt);
+    const [prevTool, setPrevTool] = createSignal<string | null>(null);
     const [saveProgress, setSaveProgress] = useSaveProgress();
 
     const [fullscreen, setFullscreen] = createSignal(false);
 
-    const colorPicker = "ColorPicker";
-    const paintbrush = "Paintbrush";
-    const showConsole = false;
 
     const paintColorsRgb = () => {
         let hsl = paintColorHsl();
@@ -64,6 +67,13 @@ const UI: Component<UIProps> = (props) => {
         }
     }
 
+    function setCurrentTool(tool: string) {
+        
+        setPrevTool(currentTool());
+
+        setTool(tool);
+    }
+
     props.delegate.on_received_msg = (msg) => {
 
         if (msg.type == "SetColor") {
@@ -71,14 +81,20 @@ const UI: Component<UIProps> = (props) => {
 
             setPaintColorHsl(hsl);
 
-            setCurrentTool(paintbrush);
+            let prev = prevTool();
+            var tool = lineArt;
 
+            if(prev != null) {
+                tool = prev;
+            }
+
+            setCurrentTool(tool)
 
             postUiMessage({
                 type: "SetTool",
-                tool: paintbrush,
+                tool: tool as any,
                 width: paintbrushWidth(),
-                color: paintColorsRgb()
+                color: paintColorsRgb(),
             })
         }
 
@@ -97,6 +113,15 @@ const UI: Component<UIProps> = (props) => {
 
     createEffect(() => {
 
+        if(currentTool() == lineArt) {
+            postUiMessage({
+                type: "SetTool",
+                tool: lineArt,
+                width: paintbrushWidth(),
+                color: paintColorsRgb()
+            })
+        }
+
         if (currentTool() == paintbrush) {
             postUiMessage({
                 type: "SetTool",
@@ -104,7 +129,6 @@ const UI: Component<UIProps> = (props) => {
                 width: paintbrushWidth(),
                 color: paintColorsRgb()
             })
-
         }
 
         if (currentTool() == colorPicker) {
@@ -164,17 +188,31 @@ const UI: Component<UIProps> = (props) => {
 
                 <div class="tool-buttons ml-4 pointer-events-auto absolute top-1/3 bottom-1/2 flex flex-col gap-4">
                     <div>
+                        <Show when={currentTool() != lineArt}>
+                            <md-filled-tonal-icon-button onclick={() => setCurrentTool(lineArt)}>
+                                <md-icon>stylus_fountain_pen</md-icon>
+                            </md-filled-tonal-icon-button>
+                        </Show>
+                        <Show when={currentTool() == lineArt}>
+                            <md-filled-icon-button onclick={() => setCurrentTool(lineArt)}>
+                                <md-icon className='my-7'>stylus_fountain_pen</md-icon>
+                            </md-filled-icon-button>
+                        </Show>
+                    </div>
+
+                    <div>
                         <Show when={currentTool() != paintbrush}>
                             <md-filled-tonal-icon-button onclick={() => setCurrentTool(paintbrush)}>
-                                <md-icon>stylus</md-icon>
+                                <md-icon>brush</md-icon>
                             </md-filled-tonal-icon-button>
                         </Show>
                         <Show when={currentTool() == paintbrush}>
                             <md-filled-icon-button onclick={() => setCurrentTool(paintbrush)}>
-                                <md-icon className='my-7'>stylus</md-icon>
+                                <md-icon className='my-7'>brush</md-icon>
                             </md-filled-icon-button>
                         </Show>
                     </div>
+
                     <div>
                         <Show when={currentTool() != colorPicker}>
                             <md-filled-tonal-icon-button onclick={() => setCurrentTool(colorPicker)}>
@@ -186,11 +224,6 @@ const UI: Component<UIProps> = (props) => {
                                 <md-icon>dropper_eye</md-icon>
                             </md-filled-icon-button>
                         </Show>
-                    </div>
-                    <div>
-                        <md-filled-tonal-icon-button>
-                            <md-icon>comic_bubble</md-icon>
-                        </md-filled-tonal-icon-button>
                     </div>
                 </div>
 

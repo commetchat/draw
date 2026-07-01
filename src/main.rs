@@ -4,14 +4,9 @@
 use bevy::sprite::{Wireframe2dConfig, Wireframe2dPlugin};
 
 use bevy::{
-    prelude::*,
-    reflect::TypePath,
-    render::{
-        render_resource::{AsBindGroup, ShaderRef},
-        view::RenderLayers,
-    },
-    sprite::{Material2d, Material2dPlugin},
-    window::WindowResolution,
+    prelude::*, reflect::TypePath, render::{
+        render_resource::{AsBindGroup, ShaderRef, ShaderType}, view::RenderLayers,
+    }, sprite::{Material2d, Material2dPlugin}, window::WindowResolution,
 };
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use iyes_perf_ui::{
@@ -155,7 +150,6 @@ fn setup(mut commands: Commands) {
         Camera2d,
         RenderLayers::from_layers(&[
             RENDER_LAYER_DEFAULT,
-            RENDER_LAYER_BATCH_STROKES,
             RENDER_LAYER_HUD,
             RENDER_LAYER_ACTIVE_STROKES,
             RENDER_LAYER_RETAINED_IMAGE,
@@ -180,9 +174,21 @@ fn setup(mut commands: Commands) {
     ));
 }
 
+#[repr(C)]
+#[derive(Debug, Default, ShaderType, Clone)]
+pub struct ShaderFlags {
+    pub is_active_stroke: i32,
+    pub stroke_type: i32,
+    pub unused2: i32,
+    pub unused3: i32,
+}
+
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-struct CustomMaterial {}
+struct CustomMaterial {
+    #[uniform(0)]    
+    pub flags: ShaderFlags,
+}
 
 /// The Material2d trait is very configurable, but comes with sensible defaults for all methods.
 /// You only need to implement functions for features that need non-default behavior. See the Material2d api docs for details!

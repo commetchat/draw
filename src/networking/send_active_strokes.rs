@@ -47,7 +47,7 @@ pub fn send_active_strokes_system(
                                 source: stroke_finished_data.source.clone(),
                             },
                             data: StrokeData {
-                                stroke_type: crate::stroke::StrokeType::Paint(stroke.color),
+                                stroke_type: stroke.stroke_type.clone(),
                                 width: stroke.width,
                                 points: stroke.points.clone(),
                                 pressures: Some(stroke.pressures.clone()),

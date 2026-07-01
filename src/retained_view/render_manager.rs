@@ -54,22 +54,18 @@ pub fn render_loop(
     mut retained_camera: Single<(&mut RetainedView, &mut Camera)>,
     mut target_camera: Single<(&mut TargetCamera, &mut RenderLayers, &GlobalTransform)>,
 ) {
-    if retained_camera.0.frames_until_disabled == 1 {
+    if retained_camera.0.frames_until_disabled > 0 {
+        
+        retained_camera.1.is_active = true;
+
         *target_camera.1 = target_camera
             .1
             .clone()
             .without(RENDER_LAYER_BATCH_STROKES)
             .with(RENDER_LAYER_RETAINED_IMAGE);
-        retained_camera.1.is_active = true;
+        
     } else if retained_camera.0.frames_until_disabled == 0 {
         retained_camera.1.is_active = false;
-    } else if retained_camera.0.frames_until_disabled > 0 {
-        retained_camera.1.is_active = false;
-        *target_camera.1 = target_camera
-            .1
-            .clone()
-            .with(RENDER_LAYER_BATCH_STROKES)
-            .without(RENDER_LAYER_RETAINED_IMAGE);
     }
 
     retained_camera.0.frames_until_disabled = (retained_camera.0.frames_until_disabled - 1).max(-1);

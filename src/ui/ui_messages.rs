@@ -1,4 +1,4 @@
-use bevy::ecs::event::Event;
+use bevy::{ecs::event::Event, utils::default};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -9,7 +9,14 @@ pub struct PaintbrushArgs {
     pub color: [f32; 3],
 }
 
-#[derive(TS, Debug, Serialize, Deserialize)]
+#[derive(TS, Debug, Serialize, Deserialize, Default, Clone)]
+#[ts(export, export_to = "../web/src/bindings/ui_binding.ts")]
+pub struct LineArtArgs {
+    pub width: f32,
+    pub color: [f32; 3],
+}
+
+#[derive(TS, Debug, Default, Serialize, Deserialize)]
 #[ts(export, export_to = "../web/src/bindings/ui_binding.ts")]
 pub struct EraserArgs {
     width: f32,
@@ -27,9 +34,16 @@ pub struct Color {
 #[serde(tag = "tool")]
 #[ts(export, export_to = "../web/src/bindings/ui_binding.ts")]
 pub enum Tool {
+    LineArt(LineArtArgs),
     Paintbrush(PaintbrushArgs),
     Eraser(EraserArgs),
     ColorPicker,
+}
+
+impl Default for Tool {
+    fn default() -> Self {
+        Tool::LineArt(LineArtArgs { ..default() })
+    }
 }
 
 #[derive(TS, Debug, Serialize, Deserialize)]

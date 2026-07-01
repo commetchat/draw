@@ -1,22 +1,17 @@
 use std::sync::{LazyLock, Mutex};
 
 use bevy::{
-    asset::{Assets, RenderAssetUsages},
-    ecs::{
+    asset::{Assets, RenderAssetUsages}, ecs::{
         event::EventReader,
         system::{Commands, Query, ResMut},
-    },
-    log::info,
-    render::{
+    }, log::info, render::{
         mesh::{Indices, Mesh, Mesh2d},
         view::{NoFrustumCulling, RenderLayers},
-    },
-    sprite::MeshMaterial2d,
+    }, sprite::MeshMaterial2d, utils::default,
 };
 
 use crate::{
-    CustomMaterial, RENDER_LAYER_ACTIVE_STROKES,
-    active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent},
+    CustomMaterial, RENDER_LAYER_ACTIVE_STROKES, ShaderFlags, active_strokes::active_stroke::{ActiveStroke, ActiveStrokeEvent},
 };
 
 pub static CURRENT_FRAME_SPAWNED_STROKES: LazyLock<Mutex<Vec<ActiveStroke>>> =
@@ -79,7 +74,7 @@ pub fn spawn_strokes_system(
                     timestamp: new_point_data.timestamp,
                     id_random: new_point_data.id_random,
                     stroke_origin: new_point_data.stroke_origin,
-                    color: new_point_data.color,
+                    stroke_type: new_point_data.stroke_type.clone(),
                     width: new_point_data.width,
                     points: Vec::new(),
                     is_submitted_to_database: false,
@@ -100,7 +95,17 @@ pub fn spawn_strokes_system(
                     NoFrustumCulling {},
                     RenderLayers::from_layers(&[RENDER_LAYER_ACTIVE_STROKES]),
                     Mesh2d(handle),
-                    MeshMaterial2d(materials.add(CustomMaterial {})),
+                    MeshMaterial2d(materials.add(CustomMaterial {
+                         flags: ShaderFlags{
+                            is_active_stroke: 1,
+                            stroke_type: match new_point_data.stroke_type {
+                                crate::stroke::StrokeType::LineArt(_) => 2,
+                                crate::stroke::StrokeType::Paint(_) => 1,
+                                crate::stroke::StrokeType::LegacyEraser => 0,
+                            },
+                            ..default()
+                         }
+                    })),
                 ));
             }
             _ => (),

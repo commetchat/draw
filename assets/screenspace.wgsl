@@ -22,7 +22,13 @@ fn fragment(
     let color = textureSample(texture, texture_sampler, viewport_uv);
 
     out.color = color;
-    out.depth = 0.0;
+
+    // use the alpha channel stored in the mesh vertex color
+    // to set the zdepth of this texture
+    // this is used so actively drawn strokes can be drawn
+    // underneath this texture as the correct depth
+    out.depth = color.a; 
+    out.color.a = 1.0;
     
     return out;
 }

@@ -115,9 +115,9 @@ fn setup(
             order: -1,
             target: handle.clone().into(),
             clear_color: if DEBUG_DRAW {
-                Color::linear_rgb(0.2, 0.1, 0.2).into()
+                Color::linear_rgba(0.2, 0.1, 0.2, 0.0).into()
             } else {
-                BACKGROUND.into()
+                BACKGROUND.with_alpha(0.0).into()
             },
             ..default()
         },

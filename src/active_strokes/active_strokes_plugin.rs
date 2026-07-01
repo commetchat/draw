@@ -4,10 +4,7 @@ use bevy::{
 };
 
 use crate::active_strokes::{
-    active_stroke::{ActiveStrokeEvent, RemoveStrokeEvent},
-    active_stroke_lifetime::stroke_lifetime_system,
-    active_stroke_spawner::spawn_strokes_system,
-    active_stroke_updater::{remove_strokes_system, update_strokes_system},
+    active_stroke::{ActiveStrokeEvent, RemoveStrokeEvent}, active_stroke_lifetime::stroke_lifetime_system, active_stroke_spawner::{clear_spawned_strokes, spawn_strokes_system}, active_stroke_updater::{remove_strokes_system, update_strokes_system},
 };
 
 pub struct ActiveStrokesPlugin;
@@ -21,7 +18,7 @@ impl Plugin for ActiveStrokesPlugin {
         app.add_event::<RemoveStrokeEvent>();
         app.add_systems(
             PostUpdate,
-            (spawn_strokes_system, update_strokes_system).chain(),
+            (spawn_strokes_system, update_strokes_system, clear_spawned_strokes).chain(),
         );
         app.add_systems(Update, remove_strokes_system);
         app.add_systems(Update, stroke_lifetime_system);
