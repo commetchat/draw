@@ -9,14 +9,17 @@ import '@material/web/fab/fab';
 import '@material/web/icon/icon.js';
 import '@material/web/button/filled-button.js';
 import '@material/web/checkbox/checkbox.js';
-
+import '@material/web/dialog/dialog.js'
+import '@material/web/progress/circular-progress.js';
 import '@material/web/slider/slider.js';
 import ColorPicker from '../molecules/color-picker/color-picker';
 import { UIMessage } from '../bindings/ui_binding';
 import { hsl2rgb, rgb2hex, rgb2hsl } from '../utils';
 import h from 'solid-js/h';
-import { useSaveProgress } from '..';
+import { useSaveProgress, useShowDialog } from '..';
 import { applyTheme, argbFromHex, argbFromRgb, themeFromSourceColor } from '@material/material-color-utilities';
+import { MdDialog } from '@material/web/dialog/dialog.js';
+
 
 interface UIProps {
     callback: ((message: UIMessage) => void) | null;
@@ -38,10 +41,10 @@ const UI: Component<UIProps> = (props) => {
     const [paintbrushWidth, setPaintbrushWidth] = createSignal(10.0);
     const [currentTool, setTool] = createSignal(lineArt);
     const [prevTool, setPrevTool] = createSignal<string | null>(null);
-    const [saveProgress, setSaveProgress] = useSaveProgress();
-
     const [fullscreen, setFullscreen] = createSignal(false);
 
+    const [saveProgress, setSaveProgress] = useSaveProgress();
+    const [showDialog, setShowDialog] = useShowDialog();
 
     const paintColorsRgb = () => {
         let hsl = paintColorHsl();
@@ -68,7 +71,7 @@ const UI: Component<UIProps> = (props) => {
     }
 
     function setCurrentTool(tool: string) {
-        
+
         setPrevTool(currentTool());
 
         setTool(tool);
@@ -84,7 +87,7 @@ const UI: Component<UIProps> = (props) => {
             let prev = prevTool();
             var tool = lineArt;
 
-            if(prev != null) {
+            if (prev != null) {
                 tool = prev;
             }
 
@@ -101,7 +104,6 @@ const UI: Component<UIProps> = (props) => {
         if (msg.type == "GameReady") {
             setGameReady(true);
         }
-
     }
 
     function postUiMessage(message: UIMessage) {
@@ -113,7 +115,7 @@ const UI: Component<UIProps> = (props) => {
 
     createEffect(() => {
 
-        if(currentTool() == lineArt) {
+        if (currentTool() == lineArt) {
             postUiMessage({
                 type: "SetTool",
                 tool: lineArt,
@@ -139,10 +141,23 @@ const UI: Component<UIProps> = (props) => {
         }
     });
 
-    function saveToBackend() {
-        if (saveProgress() == "") {
-            postUiMessage({ type: "SaveToBackend" });
+
+    let dialog: any;
+
+    createEffect(() => {
+        console.log(dialog.children);
+        let d = dialog.children[0] as MdDialog;
+
+        if (showDialog()) {
+            d.show();
+        } else {
+            d.close();
         }
+    })
+
+    function saveToBackend() {
+        setShowDialog(true);
+        postUiMessage({ type: "SaveToBackend" });
     }
 
     function toggleFullscreen() {
@@ -161,15 +176,33 @@ const UI: Component<UIProps> = (props) => {
         setPaintColorHsl([hsl[0], hsl[1], hsl[2]]);
     }
 
+
+
     return (
 
         <div class='pointer-events-none' style={"z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%"}>
+
+
             <div class='pt-(--safe-area-top) pl-(--safe-area-left) pb-(--safe-area-bottom) pr-(--safe-area-right)'>
+
+                <div ref={dialog}>
+                    <md-dialog class="dialog m-auto">
+                        <div slot="headline" class='text-(--md-sys-color-on-surface) ml-4 mt-4'> <h2>Saving...</h2></div>
+                        <div slot="content" class='text-center flex items-center flex-col content-center justify-center'>
+                            <md-circular-progress class='mt-6' indeterminate></md-circular-progress>
+
+                            <div class='m-6'>
+                                {saveProgress()}
+                            </div>
+
+                        </div>
+                    </md-dialog>
+                </div>
 
                 <div class="pointer-events-auto flex gap-4 " style={"margin: 10px;"}>
                     <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
                     <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
-                    <md-filled-button onclick={() => saveToBackend()}> <div class='mx-4' >{saveProgress() == "" ? `Save` : saveProgress()}</div></md-filled-button>
+                    <md-filled-button onclick={() => saveToBackend()}> <div class='mx-4' >{`Save`}</div></md-filled-button>
                 </div>
 
                 <Show when={gameReady() == false}>
@@ -177,6 +210,13 @@ const UI: Component<UIProps> = (props) => {
                         <md-filled-button> <div class='mx-4' >Getting Ready...</div></md-filled-button>
                     </div>
                 </Show>
+
+
+
+                <div class="pointer-events-auto margin-auto">
+                    {dialog}
+                </div>
+
 
 
                 <div class='pointer-events-auto absolute bottom-0 bg-blend-overlay pb-(--safe-area-bottom)' style={"filter: drop-shadow(0px 0px 1px gray);"} >
@@ -258,7 +298,7 @@ const UI: Component<UIProps> = (props) => {
                     </div>
                 </Show>
             </div >
-        </div>
+        </div >
     );
 };
 

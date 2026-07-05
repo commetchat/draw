@@ -8,8 +8,8 @@ let db: IDBDatabase | null
 
 console.error = (message, parms) => postAlert(`ERROR: ${message}`)
 
-self.onerror = function(message) {
-  postAlert(`ERROR: ${message}`)
+self.onerror = function (message) {
+    postAlert(`ERROR: ${message}`)
 };
 
 self.onmessage = function (e) {
@@ -340,7 +340,21 @@ async function save_to_backend() {
 
     console.log("Received all keys: ", keys);
 
+
+
     let array = keys.values().toArray();
+
+    postMessage({
+        type: "save_progress",
+        data: `Found ${array.length} chunks to save`
+    });
+
+    if (array.length == 0) {
+        postMessage({
+            type: "save_progress",
+            data: `skip`
+        });
+    }
 
     for (var i = 0; i < array.length; i++) {
         var chunk = array[i];
@@ -380,6 +394,11 @@ function getChunkKeys(): Promise<Set<string>> {
 
         let keys = new Set<string>();
 
+        postMessage({
+            type: "save_progress",
+            data: "Finding chunks to save"
+        });
+
         cursorRequest.onsuccess = function (e) {
 
             var cursor = (e as any).target.result;
@@ -389,6 +408,11 @@ function getChunkKeys(): Promise<Set<string>> {
                     if (keys.has(stroke.chunk_key) == false) {
                         console.log("Adding key: ", stroke.chunk_key);
                         keys.add(stroke.chunk_key);
+
+                        postMessage({
+                            type: "save_progress",
+                            data: "Found chunk: " + stroke.chunk_key
+                        });
                     }
                 }
 
@@ -586,7 +610,7 @@ function append_chunk_data_task(data: PendingChunkData): Promise<void> {
     return new Promise(resolve => {
 
         console.log("Appending mesh data!", data.chunk_key);
-        
+
         const tx = db?.transaction([strokes, mesh], "readwrite");
 
         tx!.onerror = (err) => {

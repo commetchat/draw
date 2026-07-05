@@ -14,7 +14,7 @@ import { useSearchParams } from '@solidjs/router';
 
 import { createMatrixRTCSdk, MatrixRTCSdk } from '../matrixrtc/matrixrtc-sdk.js';
 import { INotifyCapabilitiesActionRequest, IVisibilityActionRequest, MatrixCapabilities, WidgetApi, WidgetApiFromWidgetAction } from 'matrix-widget-api';
-import { useSaveProgress } from '..';
+import { useSaveProgress, useShowDialog } from '..';
 import { base64ToUint8, uint8ToBase64 } from '../utils/b64';
 import { AsyncTaskQueue } from '../utils/async_task_queue';
 import { applySafeArea } from '../utils/safe_area';
@@ -42,6 +42,8 @@ class MatrixRTCDelegate implements NetworkDelegate {
     on_received: ((message: Uint8Array, from: string) => void) | null;
     on_peer_connected: ((from: string) => void) | null;
     on_peer_disconnected: ((from: string) => void) | null;
+    on_upload_finished: (() => void) | null = null;
+
 
     documentId: string | null;
 
@@ -50,6 +52,7 @@ class MatrixRTCDelegate implements NetworkDelegate {
 
     pendingChunks: BackendChunk[];
     events: EventTarget;
+
 
     onConnectionStatusChanged = (status: any) => {
         console.log("Connection status changed: ", status);
@@ -195,7 +198,6 @@ class MatrixRTCDelegate implements NetworkDelegate {
             chunk: chunk_id,
             data: data
         })
-
     };
 
 
@@ -352,6 +354,7 @@ const MatrixWidget: Component = () => {
     const [gameDelegate, setGameDelegate] = createSignal<GameDelegate | null>(null);
 
     const [saveProgress, setSaveProgress] = useSaveProgress();
+    const [showDialog, setShowDialog] = useShowDialog();
 
     onMount(async () => {
         let sdk = await createMatrixRTCSdk("com.lagmachine.drawinggame")
@@ -393,9 +396,12 @@ const MatrixWidget: Component = () => {
             let queueLength = (ev as CustomEvent).detail.length as number;
 
             if (queueLength > 0) {
+
                 setSaveProgress("Uploading: " + queueLength.toString());
             } else {
-                setSaveProgress("");
+                setTimeout(() => {
+                    setShowDialog(false);
+                }, 2000);
             }
         });
 

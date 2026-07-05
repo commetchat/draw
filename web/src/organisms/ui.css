@@ -4,4 +4,11 @@
 
     --md-filled-tonal-icon-button-container-height: 60px;
     --md-filled-tonal-icon-button-container-width: 60px;
+
+}
+
+.dialog {
+    --md-dialog-container-color: var(--md-sys-color-surface);
+    
+    
 }

@@ -33,11 +33,13 @@ let peerjs_delegate: NetworkDelegate = {
     on_peer_connected: null,
     on_peer_disconnected: null,
     on_ready: null,
-    upload_chunk: null,
+    upload_chunk: (chunk_id: string, data: Uint8Array): void => {
+    },
     download_chunks: function (chunk_id: string): void {
     },
     broadcast: function (message: Uint8Array): void {
-    }
+    },
+    on_upload_finished: null
 }
 
 let game_delegate: GameDelegate = {

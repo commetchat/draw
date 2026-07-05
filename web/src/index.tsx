@@ -24,7 +24,9 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 }
 
 const [saveProgress, setSaveProgress] = createSignal("");
+const [showDialog, setShowDialog] = createSignal(false);
 export const useSaveProgress: () => [Accessor<string>, Setter<string>] = () => [saveProgress, setSaveProgress];
+export const useShowDialog: () => [Accessor<boolean>, Setter<boolean>] = () => [showDialog, setShowDialog];
 
 try {
   const urlParams = new URLSearchParams(window.location.search)

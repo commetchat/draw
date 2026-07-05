@@ -13,12 +13,14 @@ export class WebDatabase {
         this.instance_id = instance_id;
         this.worker.onmessage = this.handleMessage.bind(this);
         this.network_delegate = delegate;
+        this.events = new EventTarget();
     }
 
     instance_id: string
     db: IDBDatabase | null
     worker: Worker
     network_delegate: NetworkDelegate
+    events: EventTarget
 
 
     init() {
@@ -142,7 +144,7 @@ export class WebDatabase {
             append_mesh_data(message.data.data);
         }
 
-        if(message.data.type == "alert") {
+        if (message.data.type == "alert") {
             window.alert(message.data.data)
         }
 
@@ -156,10 +158,31 @@ export class WebDatabase {
             game.db_remove_verts(message.data.data.chunk_key, message.data.data.offset, message.data.data.num_verts)
         }
 
-        if(message.data.type == "save_chunk") {
+        if (message.data.type == "save_progress") {
+            var ev = new Event("saveprogress") as any;
+            ev.value = message.data.data;
+
+            if(message.data.data == "skip") {
+                console.log("Found no data to save");
+                ev.value = "skip";
+            }
+
+            console.log("Dispatching event: ", ev);
+            this.events.dispatchEvent(ev);
+        }
+
+        if (message.data.type == "save_chunk") {
             console.log("SAVE CHUNK TO BACKEND");
             console.log(message.data);
             let bytes = message.data.data.data as ArrayBuffer;
+
+            var ev = new Event("saveprogress") as any;
+            ev.value = "Queuing chunk for upload: " + message.data.data.chunk_id;
+
+            console.log("Dispatching event: ", ev);
+
+            this.events.dispatchEvent(ev);
+
             this.network_delegate.upload_chunk!(message.data.data.chunk_id, new Uint8Array(bytes));
         }
     }

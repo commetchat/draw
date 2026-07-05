@@ -13,6 +13,7 @@ import { WebDatabase } from '../web_database';
 import UI, { UIDelegate } from './ui';
 import { UIMessage } from '../bindings/ui_binding';
 import { BinaryWriter } from '../utils/binary_writer';
+import { useSaveProgress, useShowDialog } from '..';
 
 
 
@@ -120,10 +121,6 @@ function openFile() {
   input.click();
 }
 
-function saveToBackend() {
-  window.gameDatabase
-}
-
 interface NetworkDelegate {
   send_to: (message: Uint8Array, to: string) => void;
   broadcast: (message: Uint8Array) => void;
@@ -133,6 +130,7 @@ interface NetworkDelegate {
   on_peer_disconnected: ((from: string) => void) | null;
   upload_chunk: ((chunk_id: string, data: Uint8Array) => void) | null;
   download_chunks: ((chunk_id: string) => void);
+  on_upload_finished: (() => void) | null;
 }
 
 interface GameDelegate {
@@ -149,6 +147,25 @@ interface AppProps {
 const App: Component<AppProps> = (props) => {
 
   initGame(props.instance_id, props.network_delegate, props.game_delegate);
+
+  const [saveProgress, setSaveProgress] = useSaveProgress();
+  const [showDialog, setShowDialog] = useShowDialog();
+
+  const onSaveProgress = (ev: any) => {
+    console.log("UI Recieved event!");
+    console.log(ev)
+
+
+    if (ev.value == "skip") {
+      setTimeout(() => {
+        setShowDialog(false)
+      }, 3000)
+    } else {
+      setSaveProgress(ev.value);
+    }
+  }
+
+  window.gameDatabase.events.addEventListener("saveprogress", onSaveProgress)
 
   const save_to_file = () => {
     window.gameDatabase.save_to_file()
@@ -192,7 +209,8 @@ const App: Component<AppProps> = (props) => {
       return;
     }
 
-    if(message.type == "SaveToBackend") {
+    if (message.type == "SaveToBackend") {
+      setSaveProgress("Starting save");
       window.gameDatabase.saveToBackend();
       return;
     }
