@@ -1,4 +1,5 @@
-# Draw Bevy
+# Draw
+Infinite canvas social drawing game
 
 ### Running
 ```
