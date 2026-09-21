@@ -166,12 +166,12 @@ fn setup(mut commands: Commands) {
         TouchCameraController::default(),
     ));
 
-    commands.spawn((
-        PerfUiFramerateEntries::default(),
-        PerfUiEntryEntityCount::default(),
-        PerfUiPendingStrokes,
-        RenderLayers::layer(RENDER_LAYER_HUD),
-    ));
+    // commands.spawn((
+    //     PerfUiFramerateEntries::default(),
+    //     PerfUiEntryEntityCount::default(),
+    //     PerfUiPendingStrokes,
+    //     RenderLayers::layer(RENDER_LAYER_HUD),
+    // ));
 }
 
 #[repr(C)]
