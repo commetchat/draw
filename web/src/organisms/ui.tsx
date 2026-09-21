@@ -200,8 +200,8 @@ const UI: Component<UIProps> = (props) => {
                 </div>
 
                 <div class="pointer-events-auto flex gap-4 " style={"margin: 10px;"}>
-                    <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
-                    <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button>
+                    {/* <md-filled-button onclick={() => postUiMessage({ type: "LoadFile" })}> <div class='mx-4' >Open File</div></md-filled-button>
+                    <md-filled-button onclick={() => postUiMessage({ type: "SaveFile" })}> <div class='mx-4' >Save File</div></md-filled-button> */}
                     <md-filled-button onclick={() => saveToBackend()}> <div class='mx-4' >{`Save`}</div></md-filled-button>
                 </div>
 
