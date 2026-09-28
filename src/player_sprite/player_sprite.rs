@@ -14,11 +14,7 @@ use bevy::{
 };
 
 use crate::{
-    RENDER_LAYER_SPRITES,
-    lerp_transform::TargetTransform,
-    networking::{connected_peers::PeerConnectedEvent, network_owned::NetworkOwned},
-    player_sprite::zoom_cancel::ZoomCancel,
-    utils::get_random_uint32,
+    RENDER_LAYER_SPRITES, lerp_transform::TargetTransform, networking::{connected_peers::PeerConnectedEvent, network_owned::NetworkOwned}, player_sprite::zoom_cancel::ZoomCancel, user_info::UserInfo, utils::get_random_uint32,
 };
 
 #[derive(Component, Default)]
@@ -41,6 +37,11 @@ pub fn spawn_player_sprite_system(
             "embedded://characters/character_purple_walk_a.png",
             "embedded://characters/character_yellow_walk_b.png",
         ];
+
+        // dont spawn a sprite for ourself
+        if event.id == UserInfo::get_user_id() {
+            continue;
+        }
 
         let i = get_random_uint32();
         let index = i % u32::try_from(images.len()).unwrap();
