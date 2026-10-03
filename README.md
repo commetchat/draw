@@ -15,6 +15,10 @@ A collaborative drawing game built on top of MatrixRTC, draw with your friends o
 
 ### Running
 ```
+
+cd web
+./build-matrixrtc.sh
+cd ..
 cargo build --target wasm32-unknown-unknown
 wasm-bindgen --out-dir ./web/src/bevy/ --target web ./target/wasm32-unknown-unknown/debug/draw-bevy.wasm
 cd web
@@ -24,6 +28,9 @@ npm run dev
 
 ### Building
 ```
+cd web
+./build-matrixrtc.sh
+cd ..
 cargo build --release --target wasm32-unknown-unknown
 wasm-bindgen --out-dir ./web/src/bevy/ --target web ./target/wasm32-unknown-unknown/release/draw-bevy.wasm
 mv ./web/src/bevy/draw-bevy_bg.wasm ./web/src/bevy/draw-bevy_bg_unoptimized.wasm
